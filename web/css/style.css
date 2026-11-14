@@ -432,7 +432,7 @@ body {
   display: grid; place-items: center;
   border-radius: var(--r-chico);
   background:
-    radial-gradient(420px 320px at 50% 42%, rgba(47,111,237,.07), transparent 70%),
+    radial-gradient(460px 340px at 50% 40%, #ffffff, transparent 72%),
     var(--fondo-2);
   overflow: hidden;
 }
