@@ -180,6 +180,15 @@ body.mode-casco #etch { display: block; }
   font-size: 22px;
 }
 
+.read small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.read small:empty { display: none; }
+
 .read.watch { color: #e2b15a; }
 .read.bad { color: #ff6a45; }
 

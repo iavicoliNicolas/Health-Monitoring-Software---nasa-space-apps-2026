@@ -72,6 +72,8 @@ function applyChrome(snap) {
     read.classList.toggle("watch", level === "watch");
     read.classList.toggle("bad", level === "bad");
   }
+  const why = document.querySelector('[data-k="o2why"]');
+  if (why && why.textContent !== snap.o2Cause) why.textContent = snap.o2Cause;
   fog.style.opacity = ui.mode === "casco" ? String(0.15 + snap.breath * 0.55) : "0";
   const interactive = world?.hover && world.hover.pick;
   canvas.style.cursor = interactive ? "pointer" : "crosshair";
@@ -80,7 +82,7 @@ function applyChrome(snap) {
 function paint(force = false) {
   const snap = snapshot(telemetry.state);
   const moving = ui.chapter == null ? snap.clock : Math.floor(snap.t * 10);
-  const sig = `${ui.chapter}|${ui.hover}|${snap.scenario.id}|${snap.worst}|${Object.values(snap.values).join()}|${Object.values(snap.judge).join()}|${moving}`;
+  const sig = `${ui.chapter}|${ui.hover}|${snap.scenario.id}|${snap.worst}|${Object.values(snap.values).join()}|${Object.values(snap.judge).join()}|${snap.o2Cause}|${moving}`;
   if (force || sig !== paintSig) {
     paintSig = sig;
     sheets.redraw(snap, ui);
@@ -202,6 +204,18 @@ function grain() {
   document.getElementById("grain").style.backgroundImage = `url(${noise.toDataURL()})`;
 }
 
+function applyQuery(params) {
+  const mirada = params.get("mirada");
+  if (mirada && MODES.some((item) => item.id === mirada)) ui.mode = mirada;
+  const rawChapter = params.get("capitulo");
+  if (rawChapter != null && rawChapter !== "") {
+    const n = Number(rawChapter);
+    if (Number.isInteger(n) && n >= 1 && n <= CHAPTERS.length) ui.chapter = n - 1;
+  }
+  const incidente = params.get("incidente");
+  if (incidente && SCENARIOS.some((item) => item.id === incidente)) telemetry.setScenario(incidente);
+}
+
 function bootError(message) {
   boot.classList.remove("gone");
   boot.textContent = message;
@@ -209,9 +223,7 @@ function bootError(message) {
 
 async function start() {
   grain();
-  if (q.get("mirada")) ui.mode = q.get("mirada");
-  if (q.get("capitulo") != null && q.get("capitulo") !== "") ui.chapter = Number(q.get("capitulo"));
-  if (q.get("incidente")) telemetry.setScenario(q.get("incidente"));
+  applyQuery(q);
   await loadFonts();
   telemetry.step(0.016);
   sheets = createSheets();
@@ -259,8 +271,7 @@ window.addEventListener("keydown", (event) => {
   else if (event.key === "r" || event.key === "R") setMode("reloj");
   else if (event.key === "c" || event.key === "C") setMode("casco");
   else if (event.key === "m" || event.key === "M") toggleEar();
-  else if (event.key === "Tab") {
-    event.preventDefault();
+  else if ((event.key === "i" || event.key === "I") && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey) {
     cycleScenario();
   } else if (event.key === "f" || event.key === "F") {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();

@@ -126,6 +126,13 @@ export const SCENARIOS = [
     note: "El sello del casco suda. Revisar antes de dormir.",
     whisper: "Fuga en el traje. La columna verde cae.",
   },
+  {
+    id: "desvelo",
+    ru: "БЕССОН",
+    es: "desvelo",
+    note: "Ni el sueño ni el agua llegaron. No salir así.",
+    whisper: "Desvelo. El sueño y el agua cayeron.",
+  },
 ];
 
 export const MODES = [

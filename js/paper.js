@@ -441,7 +441,18 @@ function paintIndex(ctx, base, snap, hover) {
     const level = snap.judge[chapter.id];
     const color =
       level === "bad" ? "rgba(150, 36, 28, 0.95)" : level === "watch" ? "rgba(140, 84, 22, 0.95)" : "rgba(36, 90, 48, 0.85)";
-    write(ctx, STATUS_LABEL[level], 930, y, 30, { align: "right", color });
+    const label = STATUS_LABEL[level];
+    const cause = chapter.id === "oxigeno" ? snap.o2Cause : "";
+    if (cause) {
+      ctx.font = "500 30px Caveat, cursive";
+      const labelW = ctx.measureText(label).width;
+      write(ctx, cause, 914 - labelW, y, 20, {
+        align: "right",
+        family: "'Share Tech Mono', monospace",
+        color,
+      });
+    }
+    write(ctx, label, 930, y, 30, { align: "right", color });
     write(ctx, snap.values[chapter.id], 930, y + 30, 20, {
       align: "right",
       family: "'Share Tech Mono', monospace",
@@ -494,6 +505,13 @@ function paintChapter(ctx, base, snap, index) {
 
   historyLine(ctx, snap, chapter.id, 110, 1040, 800, 120);
   inkStamp(ctx, 250, 1260, level);
+  if (chapter.id === "oxigeno" && snap.o2Cause) {
+    const color = level === "bad" ? "rgba(150, 36, 28, 0.95)" : "rgba(140, 84, 22, 0.95)";
+    write(ctx, snap.o2Cause, 430, 1196, 28, {
+      family: "'Share Tech Mono', monospace",
+      color,
+    });
+  }
   write(ctx, snap.scenario.note, 420, 1288, 26, { color: "rgba(80, 36, 28, 0.8)" });
 }
 

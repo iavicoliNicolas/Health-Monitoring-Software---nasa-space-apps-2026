@@ -25,12 +25,16 @@ Después, [http://127.0.0.1:8765](http://127.0.0.1:8765).
 | Cambiar de mirada | diario, reloj o casco, o las teclas D, R y C |
 | Abrir un capítulo | clic en el diario, o teclas 1 a 6 |
 | Volver | «volver» en la hoja, o Escape |
-| Cambiar el incidente | norma, oxígeno, llamarada, fuga, o Tab |
+| Cambiar el incidente | norma, oxígeno, llamarada, fuga, desvelo, o la tecla I |
 | Sonido de la lámpara | el botón lámpara, la lámpara de la mesa, o M |
 
 La perilla y los objetos de la mesa también se pueden tocar.
 
-Atajos de revisión: `?mirada=casco`, `?capitulo=2`, `?incidente=llamarada`. `?post=1` fuerza el bloom aunque el equipo no tenga GPU.
+Atajos de revisión: `?mirada=casco`, `?capitulo=2` (capítulo II, del 1 al 6), `?incidente=llamarada`. Si la mirada, el capítulo o el incidente no existen, se ignoran. `?post=1` fuerza el bloom aunque el equipo no tenga GPU.
+
+```bash
+node --test
+```
 
 ## Qué hay debajo
 

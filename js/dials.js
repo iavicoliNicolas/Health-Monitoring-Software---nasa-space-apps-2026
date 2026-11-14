@@ -1,3 +1,7 @@
+import { PULSE_BAD } from "./telemetry.js";
+
+export const PULSE_DIAL = { min: 40, max: 170, bad: PULSE_BAD };
+
 export function unitT(value, min, max) {
   return Math.min(1, Math.max(0, (value - min) / (max - min)));
 }
@@ -57,7 +61,13 @@ export function paintStaticDial(kind) {
   ctx.stroke();
 
   const spec = {
-    heart: { label: "ПУЛЬС", marks: [40, 80, 120, 160], min: 40, max: 170, danger: 0.72 },
+    heart: {
+      label: "ПУЛЬС",
+      marks: [40, 80, 100, 120, 160],
+      min: PULSE_DIAL.min,
+      max: PULSE_DIAL.max,
+      danger: (PULSE_DIAL.bad - PULSE_DIAL.min) / (PULSE_DIAL.max - PULSE_DIAL.min),
+    },
     o2: { label: "O2", marks: [0, 25, 50, 75, 100], min: 0, max: 100, danger: 0.22, invert: true },
     co2: { label: "CO2", marks: [0, 0.5, 1, 1.5, 2], min: 0, max: 2, danger: 0.55 },
   }[kind];

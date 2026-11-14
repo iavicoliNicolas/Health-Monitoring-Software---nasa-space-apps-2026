@@ -159,24 +159,33 @@ function glowTexture() {
 }
 
 function paintPlate(ctx, activeId) {
-  ctx.clearRect(0, 0, 512, 160);
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#6d655c";
-  ctx.fillRect(0, 0, 512, 160);
+  ctx.fillRect(0, 0, w, h);
   for (let i = 0; i < 30; i += 1) {
     ctx.strokeStyle = "rgba(30,24,18,0.25)";
     ctx.beginPath();
-    ctx.moveTo(0, Math.random() * 160);
-    ctx.lineTo(512, Math.random() * 160);
+    ctx.moveTo(0, Math.random() * h);
+    ctx.lineTo(w, Math.random() * h);
     ctx.stroke();
   }
-  ctx.font = "18px 'Russo One', sans-serif";
+  const n = SCENARIOS.length;
+  const slot = w / n;
+  let size = 22;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  for (; size > 12; size -= 1) {
+    ctx.font = `${size}px 'Russo One', sans-serif`;
+    const widest = Math.max(...SCENARIOS.map((scenario) => ctx.measureText(scenario.ru).width));
+    if (widest <= slot - 12) break;
+  }
   SCENARIOS.forEach((scenario, i) => {
-    const x = 64 + i * 128;
+    const x = slot * (i + 0.5);
     const on = scenario.id === activeId;
     ctx.fillStyle = on ? "#ffb15a" : "#1c1814";
-    ctx.fillText(scenario.ru, x, 78);
+    ctx.fillText(scenario.ru, x, h / 2);
   });
 }
 
@@ -507,13 +516,13 @@ export function createWorld(canvas, sheets) {
   scene.add(rim);
 
   const plateCanvas = document.createElement("canvas");
-  plateCanvas.width = 512;
+  plateCanvas.width = 640;
   plateCanvas.height = 160;
   const plateCtx = plateCanvas.getContext("2d");
   paintPlate(plateCtx, "norma");
   const plateTex = canvasTexture(plateCanvas, anisotropy);
   const plate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.008, 0.09),
+    new THREE.BoxGeometry(0.36, 0.008, 0.09),
     new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.55, metalness: 0.45 }),
   );
   plate.rotation.x = -Math.PI / 2;
@@ -522,7 +531,7 @@ export function createWorld(canvas, sheets) {
   const notch = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.008, 0.016), darkSteel);
   notch.position.set(0, 0.012, -0.012);
   knob.add(notch);
-  plate.position.set(0.02, 0.008, 0.36);
+  plate.position.set(0.06, 0.008, 0.36);
   plate.userData.pick = "switch";
   knob.userData.pick = "switch";
   scene.add(plate, knob);
@@ -730,7 +739,9 @@ export function createWorld(canvas, sheets) {
         plateTex.needsUpdate = true;
       }
       const scenarioIndex = Math.max(0, SCENARIOS.findIndex((s) => s.id === snap.scenario.id));
-      knob.rotation.y += (scenarioIndex * (Math.PI / 2) - knob.rotation.y) * Math.min(1, dt * 8);
+      const knobSweep = (Math.PI / 2) * 3;
+      const knobStep = knobSweep / Math.max(1, SCENARIOS.length - 1);
+      knob.rotation.y += (scenarioIndex * knobStep - knob.rotation.y) * Math.min(1, dt * 8);
 
       if (rustle > 0) {
         rustle += dt;

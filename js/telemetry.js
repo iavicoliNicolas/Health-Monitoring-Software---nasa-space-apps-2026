@@ -1,6 +1,8 @@
 import { CHAPTERS, SCENARIOS } from "./content.js";
 
-const TARGETS = {
+export const PULSE_BAD = 100;
+
+export const TARGETS = {
   norma: {
     hr: 68,
     o2: 76,
@@ -44,6 +46,17 @@ const TARGETS = {
     temp: 36.4,
     hydration: 68,
     sleep: 7.1,
+  },
+  desvelo: {
+    hr: 88,
+    o2: 73,
+    rad: 0.12,
+    psi: 4.22,
+    spo2: 97,
+    co2: 0.36,
+    temp: 36.5,
+    hydration: 38,
+    sleep: 3.4,
   },
 };
 
@@ -177,15 +190,35 @@ export function readings(state) {
   };
 }
 
+function worse(a, b) {
+  return RANK[b] > RANK[a] ? b : a;
+}
+
+function oxygenReading(r) {
+  const tank = r.o2 < 22 ? "bad" : r.o2 < 45 ? "watch" : "ok";
+  const spo2 = r.spo2 < 92 ? "bad" : r.spo2 < 96 ? "watch" : "ok";
+  const co2 = r.co2 > 0.85 ? "watch" : "ok";
+  const level = worse(worse(tank, spo2), co2);
+  let cause = "";
+  if (RANK[tank] < RANK[level]) {
+    cause = RANK[spo2] >= RANK[level] ? `SpO2 ${Math.round(r.spo2)}` : `CO2 ${r.co2.toFixed(2)}`;
+  }
+  return { level, cause };
+}
+
 export function judgeOf(r) {
   return {
-    pulso: r.hr > 112 ? "bad" : r.hr > 96 ? "watch" : "ok",
-    oxigeno: r.o2 < 22 || r.spo2 < 92 ? "bad" : r.o2 < 45 || r.co2 > 0.85 || r.spo2 < 96 ? "watch" : "ok",
+    pulso: r.hr > PULSE_BAD ? "bad" : r.hr > 96 ? "watch" : "ok",
+    oxigeno: oxygenReading(r).level,
     radiacion: r.rad > 1.05 ? "bad" : r.rad > 0.4 ? "watch" : "ok",
     traje: r.psi < 3.05 ? "bad" : r.psi < 3.85 ? "watch" : "ok",
     sueno: r.sleep < 5 ? "bad" : r.sleep < 6.4 ? "watch" : "ok",
     agua: r.hydration < 45 ? "bad" : r.hydration < 60 ? "watch" : "ok",
   };
+}
+
+export function oxygenCause(r) {
+  return oxygenReading(r).cause;
 }
 
 export function worstOf(judge) {
@@ -232,6 +265,7 @@ export function snapshot(state) {
       temp: r.temp.toFixed(1),
     },
     judge,
+    o2Cause: oxygenCause(r),
     worst: worstOf(judge),
     readings: r,
     breath: state.breath,
