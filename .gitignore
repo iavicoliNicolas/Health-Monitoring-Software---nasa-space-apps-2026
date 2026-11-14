@@ -1,0 +1,18 @@
+# Compiled binaries and object files
+*.exe
+*.o
+*.obj
+*.out
+build/
+vitalgrid_daemon
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+.pytest_cache/
+
+# IDEs and editors
+.vscode/
+.idea/
