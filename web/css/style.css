@@ -1,0 +1,494 @@
+/* ===========================================================================
+   VitalGrid · hoja de estilos
+   PARTE 1 — estructura y paleta
+
+   Tres reglas que sostienen todo el diseño:
+
+   1. EL COLOR SE RESERVA PARA EL ESTADO. La estructura la hacen los grises
+      y el espacio. Si el azul está en los títulos, en los bordes y en los
+      iconos, cuando algo esté mal nadie lo va a notar.
+
+   2. SANS PARA TEXTO, MONO SÓLO PARA NÚMEROS. La mono en texto corrido
+      lee como terminal de película.
+
+   3. SE AGRUPA CON AIRE, NO CON BORDES. Una tarjeta blanca sobre fondo
+      gris claro ya separa: no hace falta encerrarla.
+   =========================================================================== */
+
+/* --- PALETA · clara y limpia ---------------------------------------------
+   Tres reglas que la sostienen:
+   1. EL COLOR SE RESERVA PARA EL ESTADO. La estructura la hacen los grises
+      y el espacio. Si el azul está en los títulos, los bordes y los iconos,
+      cuando algo esté mal nadie lo va a notar.
+   2. SANS PARA TEXTO, MONO SÓLO PARA NÚMEROS.
+   3. SE AGRUPA CON AIRE, NO CON BORDES. Una tarjeta blanca sobre gris claro
+      ya separa: no hace falta encerrarla.                                  */
+:root {
+  /* Superficies */
+  --fondo:        #eaeff5;
+  --fondo-2:      #f4f7fa;
+  --blanco:       #ffffff;
+  --linea:        #e2e8f0;
+
+  /* Tinta */
+  --tinta:        #16293d;   /* azul muy oscuro, no negro puro */
+  --tinta-2:      #5b7389;
+  --tinta-3:      #91a5b8;
+
+  /* Acento: identidad, NO estado */
+  --acento:       #2f6fed;
+  --acento-suave: #e8f0ff;
+
+  /* Estado: los únicos colores que informan */
+  --ok:           #0f9d6a;
+  --ok-suave:     #e4f6ee;
+  --alerta:       #d98300;
+  --alerta-suave: #fdf2e0;
+  --critico:      #e0455b;
+  --critico-suave:#fdecee;
+  --sin-dato:     #9aacbd;
+  --sin-dato-suave:#f0f3f7;
+
+  /* Forma */
+  --r:      16px;
+  --r-chico:10px;
+  --gap:    16px;
+  --sombra: 0 1px 2px rgba(22,41,61,.04), 0 8px 24px rgba(22,41,61,.06);
+
+  /* Tipografía */
+  --fuente: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --titulo: var(--fuente);
+  --mono:   ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  /* Guiño espacial: un degradé apenas perceptible, no un fondo estrellado.
+     La temática entra por el contenido, no por la decoración. */
+  background:
+    radial-gradient(1200px 600px at 78% -8%, #ffffff 0%, transparent 60%),
+    radial-gradient(900px 500px at 5% 105%, #e3ebf6 0%, transparent 55%),
+    var(--fondo);
+  background-attachment: fixed;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Esqueleto ========================================================= */
+.app { display: flex; min-height: 100vh; }
+
+/* --- Riel lateral --- */
+.riel {
+  flex: 0 0 68px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 18px 0;
+  background: var(--blanco);
+  border-right: 1px solid var(--linea);
+}
+
+.riel-marca {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: var(--tinta); color: #fff;
+  font-weight: 800; font-size: .78rem; letter-spacing: .04em;
+  margin-bottom: 14px;
+}
+
+.riel-btn {
+  width: 42px; height: 42px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--tinta-3);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.riel-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.riel-btn:hover { background: var(--fondo-2); color: var(--tinta-2); }
+.riel-btn.activo { background: var(--acento-suave); color: var(--acento); }
+
+.riel-sep { flex: 1; }
+
+.riel-crew {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--acento-suave); color: var(--acento);
+  font-weight: 700; font-size: .74rem;
+}
+
+/* --- Hoja --- */
+.hoja {
+  flex: 1; min-width: 0;
+  padding: 22px 26px 34px;
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+
+/* --- Cabecera --- */
+.cabecera {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: var(--gap); flex-wrap: wrap;
+}
+.cabecera h1 { margin: 0; font-size: 1.32rem; font-weight: 650; letter-spacing: -.01em; }
+.sub { margin: 2px 0 0; color: var(--tinta-2); font-size: .82rem; }
+
+.cabecera-der { display: flex; align-items: center; gap: 10px; }
+
+.met {
+  font-family: var(--mono); font-size: .76rem; font-variant-numeric: tabular-nums;
+  color: var(--tinta-2);
+  background: var(--blanco); border: 1px solid var(--linea);
+  padding: 7px 12px; border-radius: 999px;
+}
+
+.conexion {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .76rem; font-weight: 560;
+  padding: 7px 13px; border-radius: 999px;
+  background: var(--blanco); border: 1px solid var(--linea);
+}
+.conexion .punto { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.conexion.conectado    { color: var(--ok);       background: var(--ok-suave);       border-color: transparent; }
+.conexion.desconectado { color: var(--sin-dato); background: var(--sin-dato-suave); border-color: transparent; }
+
+/* ===== Tarjetas ========================================================== */
+.tarjeta {
+  background: var(--blanco);
+  border-radius: var(--r);
+  box-shadow: var(--sombra);
+  padding: 18px;
+}
+
+.tarjeta-cab {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px; margin-bottom: 14px;
+}
+.tarjeta-cab h2 { margin: 0; font-size: .92rem; font-weight: 620; }
+.pista { font-size: .74rem; color: var(--tinta-3); }
+
+/* ===== Layout principal ==================================================
+   Tres columnas + una banda ancha abajo, como el sketch:
+     izquierda  puntaje, signos vitales, simulacion
+     centro     mapa del tripulante
+     derecha    camara y ECG
+     banda      matriz RIDGE (necesita ancho: son 16 metricas)
+   ======================================================================== */
+.principal {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 330px;
+  gap: var(--gap);
+  align-items: start;
+}
+.col-izq, .col-der { display: flex; flex-direction: column; gap: var(--gap); }
+.col-centro { display: flex; }
+.alto-total { flex: 1; width: 100%; }
+.banda { grid-column: 1 / -1; }
+
+@media (max-width: 1280px) {
+  .principal { grid-template-columns: 260px minmax(0, 1fr); }
+  .col-der { grid-column: 1 / -1; flex-direction: row; }
+  .col-der > * { flex: 1; }
+}
+@media (max-width: 920px) {
+  .principal { grid-template-columns: 1fr; }
+  .col-der { flex-direction: column; }
+}
+
+/* ===== Puntaje de salud ==================================================
+   El anillo es el unico elemento grande de la columna: es lo primero que
+   se mira. Si no hay dato, queda gris y el numero en "--". Nunca 100.
+   ======================================================================== */
+.puntaje { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.anillo { position: relative; width: 150px; height: 150px; }
+.anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anillo circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+.anillo-base  { stroke: var(--fondo-2); }
+.anillo-valor {
+  stroke: var(--sin-dato);
+  stroke-dasharray: 327;            /* 2 * PI * 52 */
+  stroke-dashoffset: 327;
+  transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), stroke .3s;
+}
+
+.anillo-centro {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px;
+}
+.anillo-centro b {
+  font-family: var(--mono); font-size: 2.5rem; font-weight: 600;
+  line-height: 1; font-variant-numeric: tabular-nums; color: var(--sin-dato);
+}
+.anillo-centro span { font-size: .68rem; color: var(--tinta-3); }
+
+.puntaje-lbl {
+  margin: 0; font-size: .74rem; font-weight: 560;
+  letter-spacing: .04em; color: var(--tinta-2); text-transform: uppercase;
+}
+
+/* ===== Signos vitales ====================================================
+   Lo que se tiene que leer mas limpio de toda la pantalla. Una tarjeta por
+   signo: icono, nombre, numero grande en mono, unidad chica y el rango de
+   referencia debajo. El color SOLO aparece si el valor se sale del rango.
+   ======================================================================== */
+.vitales { display: flex; flex-direction: column; gap: 10px; }
+
+.vital {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--blanco); border-radius: var(--r);
+  box-shadow: var(--sombra); padding: 13px 14px;
+  border-left: 3px solid transparent;
+  transition: border-color .2s, background .2s;
+}
+
+.vital-icono {
+  flex: 0 0 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: var(--fondo-2); color: var(--tinta-3);
+}
+.vital-icono svg { width: 19px; height: 19px; fill: none; stroke: currentColor;
+                   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.vital-cuerpo { min-width: 0; flex: 1; }
+.vital-nombre { font-size: .72rem; color: var(--tinta-2); }
+.vital-fila   { display: flex; align-items: baseline; gap: 4px; }
+.vital-num    {
+  font-family: var(--mono); font-size: 1.46rem; font-weight: 600;
+  line-height: 1.15; font-variant-numeric: tabular-nums;
+}
+.vital-unidad { font-size: .72rem; color: var(--tinta-3); }
+.vital-rango  { font-size: .66rem; color: var(--tinta-3); }
+
+/* --- Los tres estados ---
+   Nominal  sin clase, la tarjeta queda neutra
+   Alerta   ambar
+   Critico  rojo
+   Sin dato gris: NO sabemos. No es verde ni rojo, es ausencia de dato.     */
+.vital.alerta  { border-left-color: var(--alerta);  background: var(--alerta-suave); }
+.vital.alerta  .vital-icono { background: #fff; color: var(--alerta); }
+.vital.alerta  .vital-num   { color: var(--alerta); }
+
+.vital.critico { border-left-color: var(--critico); background: var(--critico-suave); }
+.vital.critico .vital-icono { background: #fff; color: var(--critico); }
+.vital.critico .vital-num   { color: var(--critico); }
+
+.vital.sin-dato { background: var(--sin-dato-suave); box-shadow: none; }
+.vital.sin-dato .vital-num,
+.vital.sin-dato .vital-nombre,
+.vital.sin-dato .vital-unidad,
+.vital.sin-dato .vital-rango { color: var(--sin-dato); }
+
+/* Nivel de evidencia: discreto, arriba a la derecha de la tarjeta */
+.vital { position: relative; }
+.ev {
+  position: absolute; top: 9px; right: 10px;
+  font-family: var(--mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .06em; padding: 1px 4px; border-radius: 3px;
+  border: 1px solid currentColor; opacity: .7; cursor: help;
+}
+.ev-n1 { color: var(--acento); }
+.ev-n2 { color: var(--ok); }
+.ev-n3 { color: var(--alerta); }
+.ev-n4 { color: #c2410c; border-style: dashed; }
+.ev-sf { color: var(--sin-dato); border-style: dashed; }
+
+/* ===== Botones =========================================================== */
+.btn {
+  font: inherit; font-size: .8rem; font-weight: 560;
+  padding: 9px 15px; border-radius: var(--r-chico); cursor: pointer;
+  background: var(--tinta); color: #fff; border: 1px solid var(--tinta);
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .88; }
+.btn:disabled { opacity: .4; cursor: default; }
+
+.btn-sec { background: var(--blanco); color: var(--tinta); border-color: var(--linea); }
+.btn-sec:hover { background: var(--fondo-2); opacity: 1; }
+
+/* ===== Andamio temporal (se borra parte por parte) ======================= */
+.placeholder {
+  display: grid; place-items: center; min-height: 70px;
+  border: 1px dashed var(--linea); border-radius: var(--r-chico);
+  color: var(--tinta-3); font-size: .78rem; letter-spacing: .02em;
+  background: var(--fondo-2);
+}
+.placeholder.alto { min-height: 260px; }
+.vitales .placeholder { grid-column: 1 / -1; }
+
+/* ===== Panel de cámara ===================================================
+   Tres pestañas sobre el display. Cada una muestra SUS métricas: no se
+   apilan quince números que nadie mira. La medición vive en camara.js.
+   ======================================================================== */
+
+.pestanas {
+  display: flex; gap: 4px; padding: 3px;
+  background: var(--fondo-2); border-radius: var(--r-chico);
+  margin-bottom: 12px;
+}
+.pestana {
+  flex: 1; font: inherit; font-size: .74rem; font-weight: 560;
+  padding: 7px 6px; border: 0; border-radius: 7px; cursor: pointer;
+  background: transparent; color: var(--tinta-2);
+  transition: background .15s, color .15s;
+}
+.pestana:hover  { color: var(--tinta); }
+.pestana.activa { background: var(--blanco); color: var(--tinta); box-shadow: 0 1px 2px rgba(22,41,61,.08); }
+
+.tab-panel { display: none; }
+.tab-panel.activo { display: block; }
+
+/* --- Display --- */
+.cam {
+  position: relative; aspect-ratio: 4/3; overflow: hidden;
+  border-radius: var(--r-chico); background: #0d141c; margin-bottom: 10px;
+}
+/* espejado: la persona se ve como en un espejo, no invertida */
+.cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+.cam video { object-fit: cover; }
+
+.cam-off {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 7px;
+  color: #5b7389; font-size: .74rem;
+}
+.cam-off svg { width: 26px; height: 26px; fill: none; stroke: currentColor;
+               stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.cam-btns { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+.cam-btns .btn { flex: 1 1 0; min-width: 0; font-size: .72rem; padding: 8px 6px;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Estado del ojo --- */
+.estado-ojo {
+  display: inline-block; padding: 4px 11px; border-radius: 999px;
+  font-size: .72rem; font-weight: 600; margin-bottom: 10px;
+}
+.estado-ojo.abierto  { color: var(--ok);       background: var(--ok-suave); }
+.estado-ojo.cerrado  { color: var(--critico);  background: var(--critico-suave); }
+.estado-ojo.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
+
+/* --- Lista de métricas --- */
+.cam-lista { display: flex; flex-direction: column; }
+.cam-fila {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid var(--linea); font-size: .76rem;
+}
+.cam-fila:last-child { border-bottom: 0; }
+.cam-fila span { color: var(--tinta-2); }
+.cam-fila b { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* --- Destacados del panel de cansancio --- */
+.cam-destacados { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px; }
+.destacado {
+  padding: 11px 12px; border-radius: var(--r-chico);
+  background: var(--fondo-2); text-align: center;
+}
+.destacado b {
+  display: block; font-family: var(--mono); font-size: 1.32rem; font-weight: 600;
+  line-height: 1.2; font-variant-numeric: tabular-nums;
+}
+.destacado span   { display: block; font-size: .7rem; color: var(--tinta-2); }
+.destacado small  { display: block; font-size: .62rem; color: var(--tinta-3); margin-top: 2px; }
+.destacado.alerta  { background: var(--alerta-suave); }
+.destacado.alerta  b { color: var(--alerta); }
+.destacado.critico { background: var(--critico-suave); }
+.destacado.critico b { color: var(--critico); }
+
+/* --- Curva de apertura --- */
+.curva {
+  width: 100%; height: 96px; display: block; margin-top: 10px;
+  background: var(--fondo-2); border-radius: var(--r-chico);
+}
+
+/* --- Textos de pie --- */
+.nota { margin: 9px 0 0; font-size: .68rem; line-height: 1.45; color: var(--tinta-2); }
+.nota b { color: var(--tinta); }
+.nota code { font-family: var(--mono); font-size: .64rem; background: var(--fondo-2); padding: 1px 4px; border-radius: 4px; }
+
+.aviso-privacidad {
+  margin: 12px 0 0; padding: 9px 11px;
+  background: var(--acento-suave); border-radius: var(--r-chico);
+  font-size: .68rem; line-height: 1.45; color: #1e4bb8;
+}
+
+.log { margin: 8px 0 0; font-family: var(--mono); font-size: .66rem; color: var(--tinta-3); }
+
+/* ===== Mapa del tripulante ===============================================
+   La silueta es un placeholder: se reemplaza por el render sin tocar nada
+   más, porque los puntos se posicionan en % sobre el contenedor.
+   ======================================================================== */
+.cuerpo { display: flex; flex-direction: column; }
+
+.figura {
+  position: relative;
+  height: clamp(360px, 52vh, 560px);
+  display: grid; place-items: center;
+  border-radius: var(--r-chico);
+  background:
+    radial-gradient(420px 320px at 50% 42%, rgba(47,111,237,.07), transparent 70%),
+    var(--fondo-2);
+  overflow: hidden;
+}
+.figura img, .figura canvas, .figura .silueta {
+  height: 94%; width: auto; max-width: 92%; object-fit: contain; display: block;
+}
+
+/* --- Puntos sobre el cuerpo --- */
+.puntos { position: absolute; inset: 0; }
+
+.punto-zona {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid currentColor;
+  background: color-mix(in srgb, currentColor 28%, transparent);
+  cursor: pointer; padding: 0;
+  transition: transform .15s;
+}
+.punto-zona:hover,
+.punto-zona.activo { transform: translate(-50%, -50%) scale(1.3); }
+
+.punto-zona.ok       { color: var(--ok); }
+.punto-zona.alerta   { color: var(--alerta); }
+.punto-zona.critico  { color: var(--critico); animation: latir 1.4s infinite; }
+.punto-zona.sin-dato { color: var(--sin-dato); }
+
+@keyframes latir {
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, currentColor 18%, transparent); }
+}
+
+/* --- Detalle de la zona --- */
+.detalle {
+  margin-top: 12px; padding: 13px 14px;
+  border: 1px solid var(--linea); border-radius: var(--r-chico);
+  background: var(--fondo-2);
+}
+.detalle.oculto { display: none; }
+.detalle-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.detalle-cab b { font-size: .8rem; }
+.detalle-cerrar {
+  background: none; border: 0; color: var(--tinta-3);
+  font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.detalle-cerrar:hover { color: var(--tinta); }
+.detalle-valor { display: flex; align-items: baseline; gap: 5px; margin-top: 3px; }
+.detalle-valor span {
+  font-family: var(--mono); font-size: 1.5rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.detalle-valor small { font-size: .72rem; color: var(--tinta-3); }
+.detalle-fuente { margin: 5px 0 0; font-size: .67rem; color: var(--tinta-3); line-height: 1.45; }
+
+.figura-nota { margin: 10px 0 0; font-size: .67rem; color: var(--tinta-3); text-align: center; }
+
+/* --- Estado de la cámara: visible siempre, encendida o apagada --------- */
+.cam-estado {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .68rem; font-weight: 560;
+  padding: 4px 10px; border-radius: 999px;
+}
+.cam-estado .punto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.cam-estado.apagada   { color: var(--sin-dato); background: var(--sin-dato-suave); }
+.cam-estado.encendida { color: var(--ok);       background: var(--ok-suave); }
+.cam-estado.error     { color: var(--critico);  background: var(--critico-suave); }
