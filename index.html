@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zarya — bitácora de salud</title>
+    <link rel="stylesheet" href="./css/visor.css" />
+  </head>
+  <body class="mode-diario">
+    <canvas id="gl"></canvas>
+    <div id="visor" aria-hidden="true">
+      <div class="shade"></div>
+      <div class="grain" id="grain"></div>
+      <svg class="scratches" viewBox="0 0 1200 700" preserveAspectRatio="none">
+        <path d="M40 80 C 180 120, 260 40, 420 90" stroke="white" stroke-width="1" fill="none" />
+        <path d="M700 40 C 820 160, 900 80, 1100 140" stroke="white" stroke-width="0.8" fill="none" />
+        <path d="M120 520 C 260 480, 300 560, 480 530" stroke="white" stroke-width="1.1" fill="none" />
+        <path d="M760 600 C 900 540, 980 640, 1140 590" stroke="white" stroke-width="0.7" fill="none" />
+        <path d="M540 20 L 560 180" stroke="white" stroke-width="0.6" fill="none" />
+      </svg>
+      <div class="fog" id="fog"></div>
+      <div class="bezel"></div>
+      <div id="etch">
+        <div class="read r-hr"><span>ПУЛЬС</span><b data-k="hr">—</b></div>
+        <div class="read r-o2"><span>O2</span><b data-k="o2">—</b></div>
+        <div class="read r-rad"><span>РАД</span><b data-k="rad">—</b></div>
+        <div class="read r-psi"><span>PSI</span><b data-k="psi">—</b></div>
+        <div class="read r-water"><span>ВОДА</span><b data-k="water">—</b></div>
+        <div class="read r-sleep"><span>СОН</span><b data-k="sleep">—</b></div>
+      </div>
+      <div id="glass-stamp">ГОДЕН</div>
+    </div>
+    <p id="whisper"></p>
+    <nav id="bar" aria-label="Miradas e incidentes">
+      <span class="group" id="modes">
+        <button type="button" data-mode="diario" aria-pressed="true">diario</button>
+        <button type="button" data-mode="reloj">reloj</button>
+        <button type="button" data-mode="casco">casco</button>
+      </span>
+      <span class="sep"></span>
+      <span class="group" id="incidents">
+        <button type="button" data-incident="norma" aria-pressed="true">norma</button>
+        <button type="button" data-incident="oxigeno">oxígeno</button>
+        <button type="button" data-incident="llamarada">llamarada</button>
+        <button type="button" data-incident="fuga">fuga</button>
+      </span>
+      <span class="sep"></span>
+      <button type="button" id="lamp-btn" aria-pressed="false">lámpara</button>
+    </nav>
+    <p id="live" class="sr" aria-live="polite"></p>
+    <div id="boot">encendiendo la lámpara…</div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.js",
+          "three/addons/": "./vendor/addons/"
+        }
+      }
+    </script>
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
