@@ -3,13 +3,11 @@ import struct
 import base64
 import json
 import time
-import subprocess
-import os
-import signal
+
+from daemon_proc import start_daemon
 
 def run_integration_test():
-    # 1. Start vitalgrid_daemon.exe
-    proc = subprocess.Popen(["./vitalgrid_daemon.exe", "9005"], cwd="f:/VitalGrid", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = start_daemon(9005)
     time.sleep(1.2) # Allow daemon to bind port 9005
 
     try:

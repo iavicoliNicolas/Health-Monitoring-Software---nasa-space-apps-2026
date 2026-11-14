@@ -18,6 +18,36 @@ using namespace vitalgrid;
 
 static std::atomic<bool> g_keep_running{true};
 
+// Resting crew state. Injection commands move away from this; RESET_NOMINAL returns here.
+// Values stay inside Flight Surgeon thresholds so the cockpit does not open already in alarm.
+static void apply_nominal_baseline(RidgePayload& state) {
+    state.health_score = 95;
+    state.survival_status.vital_signs_present = true;
+    state.survival_status.sos_panic_button_active = false;
+    state.survival_status.cabin_pressure_nominal = true;
+
+    state.telemetry_ridge.R_radiation.acute_event_mSv = 8.5;
+    state.telemetry_ridge.R_radiation.career_accumulated_mSv = 145.2;
+    state.telemetry_ridge.I_isolation.sleep_hours_last_24h = 7.2;
+    state.telemetry_ridge.I_isolation.hrv_rmssd_drop_pct = 12.0;
+    state.telemetry_ridge.I_isolation.pvt_reaction_time_ms = 240;
+    state.telemetry_ridge.I_isolation.blink_rate_per_min = 18;
+    state.telemetry_ridge.I_isolation.microsleep_events = 0;
+    state.telemetry_ridge.I_isolation.perclos_pct = 0.0;
+    state.telemetry_ridge.I_isolation.crew_mood = "OPTIMAL";
+    state.telemetry_ridge.D_distance.comm_delay_oneway_min = 20.5;
+    state.telemetry_ridge.D_distance.med_supply_days_remaining = 412;
+    state.telemetry_ridge.G_gravity.heart_rate_bpm = 72;
+    state.telemetry_ridge.G_gravity.blood_pressure_sys = 120;
+    state.telemetry_ridge.G_gravity.blood_pressure_dia = 78;
+    state.telemetry_ridge.G_gravity.onsd_mm = 4.8;
+    state.telemetry_ridge.G_gravity.exercise_completed_hours = 1.5;
+    state.telemetry_ridge.G_gravity.blood_sugar_mg_dl = 92;
+    state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 2.1;
+    state.telemetry_ridge.E_environment.spo2_pct = 98;
+    state.telemetry_ridge.E_environment.body_temperature_c = 36.8;
+}
+
 void signal_handler(int signum) {
     std::cout << "\n[VITALGRID] Termination signal (" << signum << ") received. Initiating graceful shutdown..." << std::endl;
     g_keep_running.store(false);
@@ -59,36 +89,7 @@ int main(int argc, char* argv[]) {
     RidgePayload state;
     state.timestamp = RidgePayload::current_iso8601();
     state.crew_member_id = "CMD-01";
-    state.health_score = 92;
-    state.survival_status.vital_signs_present = true;
-    state.survival_status.sos_panic_button_active = false;
-    state.survival_status.cabin_pressure_nominal = true;
-
-    // Base RIDGE metrics
-    state.telemetry_ridge.R_radiation.career_accumulated_mSv = 145.2;
-    state.telemetry_ridge.R_radiation.acute_event_mSv = 12.0;
-
-    state.telemetry_ridge.I_isolation.sleep_hours_last_24h = 5.8;
-    state.telemetry_ridge.I_isolation.hrv_rmssd_drop_pct = 18.5;
-    state.telemetry_ridge.I_isolation.pvt_reaction_time_ms = 280;
-    state.telemetry_ridge.I_isolation.blink_rate_per_min = 18;
-    state.telemetry_ridge.I_isolation.microsleep_events = 0;
-    state.telemetry_ridge.I_isolation.perclos_pct = 0.0;
-    state.telemetry_ridge.I_isolation.crew_mood = "OPTIMAL";
-
-    state.telemetry_ridge.D_distance.comm_delay_oneway_min = 20.5;
-    state.telemetry_ridge.D_distance.med_supply_days_remaining = 412;
-
-    state.telemetry_ridge.G_gravity.heart_rate_bpm = 105;
-    state.telemetry_ridge.G_gravity.blood_pressure_sys = 135;
-    state.telemetry_ridge.G_gravity.blood_pressure_dia = 85;
-    state.telemetry_ridge.G_gravity.onsd_mm = 5.2;
-    state.telemetry_ridge.G_gravity.exercise_completed_hours = 1.5;
-    state.telemetry_ridge.G_gravity.blood_sugar_mg_dl = 92;
-
-    state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 3.2;
-    state.telemetry_ridge.E_environment.spo2_pct = 94;
-    state.telemetry_ridge.E_environment.body_temperature_c = 37.9;
+    apply_nominal_baseline(state);
 
     // Wire SOMA broadcast to WebSocket BEFORE starting watchdog/server threads
     soma_watchdog.set_broadcast_callback([&ws_server](const std::string& soma_json) {
@@ -229,27 +230,7 @@ int main(int argc, char* argv[]) {
             state.telemetry_ridge.I_isolation.microsleep_events = 2;
             state.telemetry_ridge.I_isolation.perclos_pct = 28.5;
         } else if (msg == "RESET_NOMINAL") {
-            state.survival_status.vital_signs_present = true;
-            state.survival_status.sos_panic_button_active = false;
-            state.survival_status.cabin_pressure_nominal = true;
-            state.telemetry_ridge.R_radiation.acute_event_mSv = 8.5;
-            state.telemetry_ridge.R_radiation.career_accumulated_mSv = 145.2;
-            state.telemetry_ridge.I_isolation.sleep_hours_last_24h = 7.2;
-            state.telemetry_ridge.I_isolation.hrv_rmssd_drop_pct = 12.0;
-            state.telemetry_ridge.I_isolation.pvt_reaction_time_ms = 240;
-            state.telemetry_ridge.I_isolation.blink_rate_per_min = 18;
-            state.telemetry_ridge.I_isolation.microsleep_events = 0;
-            state.telemetry_ridge.I_isolation.perclos_pct = 0.0;
-            state.telemetry_ridge.I_isolation.crew_mood = "OPTIMAL";
-            state.telemetry_ridge.G_gravity.heart_rate_bpm = 72;
-            state.telemetry_ridge.G_gravity.blood_pressure_sys = 120;
-            state.telemetry_ridge.G_gravity.blood_pressure_dia = 78;
-            state.telemetry_ridge.G_gravity.onsd_mm = 4.8;
-            state.telemetry_ridge.G_gravity.exercise_completed_hours = 1.5;
-            state.telemetry_ridge.G_gravity.blood_sugar_mg_dl = 92;
-            state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 2.1;
-            state.telemetry_ridge.E_environment.spo2_pct = 98;
-            state.telemetry_ridge.E_environment.body_temperature_c = 36.8;
+            apply_nominal_baseline(state);
             soma_watchdog.reset_soma();
         }
     });
@@ -285,18 +266,22 @@ int main(int argc, char* argv[]) {
                 state.telemetry_ridge.G_gravity.heart_rate_bpm >= 40 &&
                 state.telemetry_ridge.E_environment.body_temperature_c >= 20.0;
 
+            state.timestamp = RidgePayload::current_iso8601();
+            current_sample = state;
+
+            // Jitter only the sample that goes out. Writing it back was a random walk:
+            // a nominal heart rate or ppCO2 eventually crossed a clinical threshold on its own.
             if (sensors_plausible) {
-                state.telemetry_ridge.G_gravity.heart_rate_bpm =
-                    std::clamp(state.telemetry_ridge.G_gravity.heart_rate_bpm + hr_noise(gen), 40, 180);
-                state.telemetry_ridge.E_environment.cabin_ppco2_mmHg =
-                    std::max(0.1, state.telemetry_ridge.E_environment.cabin_ppco2_mmHg + noise_dist(gen) * 0.05);
-                state.telemetry_ridge.E_environment.body_temperature_c =
-                    std::clamp(state.telemetry_ridge.E_environment.body_temperature_c + noise_dist(gen) * 0.02, 34.0, 42.0);
+                current_sample.telemetry_ridge.G_gravity.heart_rate_bpm = std::clamp(
+                    state.telemetry_ridge.G_gravity.heart_rate_bpm + hr_noise(gen), 40, 180);
+                current_sample.telemetry_ridge.E_environment.cabin_ppco2_mmHg = std::max(
+                    0.1, state.telemetry_ridge.E_environment.cabin_ppco2_mmHg + noise_dist(gen) * 0.05);
+                current_sample.telemetry_ridge.E_environment.body_temperature_c = std::clamp(
+                    state.telemetry_ridge.E_environment.body_temperature_c + noise_dist(gen) * 0.02, 34.0, 42.0);
             }
 
-            state.timestamp = RidgePayload::current_iso8601();
-            state.health_score = flight_surgeon.compute_health_score(state);
-            current_sample = state;
+            current_sample.health_score = flight_surgeon.compute_health_score(current_sample);
+            state.health_score = current_sample.health_score;
         }
 
         // 1. Push to circular buffer

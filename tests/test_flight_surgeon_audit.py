@@ -3,9 +3,10 @@ import json
 import re
 import socket
 import struct
-import subprocess
 import threading
 import time
+
+from daemon_proc import start_daemon
 
 
 def ws_connect(port):
@@ -119,12 +120,7 @@ def assert_clean_decimals(alerts):
 
 def run_audit_tests():
     port = 9006
-    proc = subprocess.Popen(
-        ["./vitalgrid_daemon.exe", str(port)],
-        cwd="f:/VitalGrid",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    proc = start_daemon(port)
     time.sleep(1.2)
 
     try:

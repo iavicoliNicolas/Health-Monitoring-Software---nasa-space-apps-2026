@@ -66,7 +66,7 @@ The backend continuously ingests and validates structured JSON telemetry conform
 {
   "timestamp": "2026-11-14T12:33:24Z",
   "crew_member_id": "CMD-01",
-  "health_score": 92,
+  "health_score": 95,
   "survival_status": {
     "vital_signs_present": true,
     "sos_panic_button_active": false,
@@ -78,7 +78,7 @@ The backend continuously ingests and validates structured JSON telemetry conform
       "acute_event_mSv": 12.0
     },
     "I_isolation": {
-      "sleep_hours_last_24h": 5.8,
+      "sleep_hours_last_24h": 7.2,
       "hrv_rmssd_drop_pct": 18.5,
       "pvt_reaction_time_ms": 280
     },
@@ -87,16 +87,16 @@ The backend continuously ingests and validates structured JSON telemetry conform
       "med_supply_days_remaining": 412
     },
     "G_gravity": {
-      "heart_rate_bpm": 105,
-      "blood_pressure_sys": 135,
-      "blood_pressure_dia": 85,
-      "onsd_mm": 5.2,
+      "heart_rate_bpm": 72,
+      "blood_pressure_sys": 120,
+      "blood_pressure_dia": 78,
+      "onsd_mm": 4.8,
       "exercise_completed_hours": 1.5
     },
     "E_environment": {
-      "cabin_ppco2_mmHg": 3.2,
-      "spo2_pct": 94,
-      "body_temperature_c": 37.9
+      "cabin_ppco2_mmHg": 2.1,
+      "spo2_pct": 98,
+      "body_temperature_c": 36.8
     }
   }
 }
@@ -214,8 +214,8 @@ f:\VitalGrid\
 ### Paso 1: Clonar el Repositorio
 Abre tu terminal (PowerShell, CMD, Git Bash o terminal de Linux/macOS) y clona el proyecto:
 ```bash
-git clone https://github.com/86developer/NASA-Spaceapps-2026.git
-cd NASA-Spaceapps-2026
+git clone https://github.com/iavicoliNicolas/Health-Monitoring-Software---nasa-space-apps-2026.git
+cd Health-Monitoring-Software---nasa-space-apps-2026
 ```
 
 ---
@@ -264,7 +264,7 @@ Luego abre el archivo `web/index.html` en tu navegador favorito (Chrome, Firefox
 
 ### Paso 3: Interactuar con el Dashboard
 Una vez abierto el dashboard:
-1. Verás el estado **"TELEMETRY ONLINE"** en verde en la barra superior.
+1. Verás **"TELEMETRÍA EN LÍNEA"** en verde en la barra superior. El arranque es el reposo nominal (sin alertas). Las alarmas salen de los botones de inyección.
 2. El ECG cardíaco comenzará a dibujar en tiempo real a 1000 Hz sincronizado con la frecuencia cardíaca.
 3. En la columna derecha encontrarás el **SIMULATION COCKPIT (ANOMALY INJECTION PAD)**:
    - Haz clic en **`🚨 TRIGGER SOS BUTTON`**, **`💥 DEPRESSURIZE CABIN`** o **`💔 ASYSTOLE / COLLAPSE`** para activar el protocolo de emergencia **SOMA** ("Ciencia sobre Supervivencia"), ver el empaquetado forense Zstd, el cifrado militar AES-256-GCM y la transmisión láser DSOC a 1550nm hacia la Tierra.
@@ -287,7 +287,7 @@ cmake --build . --config Release
 ### Con Makefile:
 ```bash
 make
-./vitalgrid_daemon.exe
+./vitalgrid_daemon 9002
 ```
 
 ---
