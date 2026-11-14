@@ -94,40 +94,16 @@ function construirMatriz() {
       `<span class="leyenda-item"><span class="ev ev-${k.toLowerCase()}">${k}</span>${v}</span>`
     ).join('');
 
-  // Un botón por peligro
-  $('pilarBotones').innerHTML = config.grupos.map((g, i) => `
-    <button class="pilar-btn${i === 0 ? ' activo' : ''}" data-pilar="${g.letra}" role="tab">
-      <span class="pilar-btn-fila">
+  // Los cinco peligros a la vez: nada queda detrás de un clic.
+  $('grupos').innerHTML = config.grupos.map(g => `
+    <div class="pilar">
+      <div class="pilar-cab">
         <span class="pilar-letra">${g.letra}</span>
         <span class="pilar-titulo">${g.titulo}</span>
-      </span>
-      <span class="pilar-estado sin-dato" data-estado="${g.letra}">
-        <span class="punto"></span><span class="txt">Sin medición</span>
-      </span>
-    </button>`).join('');
-
-  document.querySelectorAll('.pilar-btn').forEach(btn => {
-    btn.addEventListener('click', () => abrirPilar(btn.dataset.pilar));
-  });
-
-  abrirPilar(config.grupos[0].letra);
-}
-
-/* Dibuja el análisis del peligro elegido. Las celdas se recrean cada vez,
-   así que el índice se rearma y después se repintan con el último payload. */
-function abrirPilar(letra) {
-  const g = config.grupos.find(x => x.letra === letra);
-  if (!g) return;
-
-  document.querySelectorAll('.pilar-btn').forEach(b =>
-    b.classList.toggle('activo', b.dataset.pilar === letra));
-
-  $('pilarDetalle').innerHTML = `
-    <div class="pilar-detalle-cab">
-      <b>${g.titulo}</b>
-      <p>${g.resumen || ''}</p>
-    </div>
-    <div class="pilar-grilla">
+        <span class="pilar-estado sin-dato" data-estado="${g.letra}">
+          <span class="punto"></span><span class="txt">—</span>
+        </span>
+      </div>
       ${g.metricas.map(m => `
         <div class="celda sin-dato" data-celda="${m.campo}" title="${m.fuente}">
           <span class="ev ev-${m.nivel.toLowerCase()}" title="${m.nivel} · ${m.fuente}">${m.nivel}</span>
@@ -139,49 +115,14 @@ function abrirPilar(letra) {
           <span class="celda-umbral">${textoUmbral(m)}</span>
           ${m.barra ? '<div class="celda-barra"><span></span></div>' : ''}
         </div>`).join('')}
-    </div>`;
+    </div>`).join('');
 
-  celdas.clear();
-  g.metricas.forEach(m => {
+  config.grupos.flatMap(g => g.metricas).forEach(m => {
     celdas.set(m.campo, { nodo: document.querySelector(`[data-celda="${m.campo}"]`), def: m });
   });
-
-  // Repintar con lo último que llegó, para que abrir un pilar no lo vacíe
-  celdas.forEach(({ def }, campo) => pintarCelda(campo, crudos[campo] ?? null));
 }
 
-/* Resumen de cada peligro en su botón: el peor estado de sus métricas.
-   Así se ve qué pilar tiene un problema sin tener que abrirlo. */
-function actualizarEstadoPilares() {
-  config.grupos.forEach(g => {
-    let crit = 0, alert = 0, sinDato = 0;
-    g.metricas.forEach(m => {
-      const v = crudos[m.campo];
-      if (v === null || v === undefined) { sinDato++; return; }
-      if (cruza(v, m.critico))     crit++;
-      else if (cruza(v, m.alerta)) alert++;
-    });
-
-    const el = document.querySelector(`[data-estado="${g.letra}"]`);
-    if (!el) return;
-
-    const estado = crit ? 'critico' : alert ? 'alerta'
-                 : sinDato === g.metricas.length ? 'sin-dato' : 'ok';
-    const texto  = crit  ? `${crit} crítico${crit > 1 ? 's' : ''}`
-                 : alert ? `${alert} en alerta`
-                 : estado === 'sin-dato' ? 'Sin medición'
-                 : sinDato ? `Nominal · ${sinDato} sin medir`
-                 : 'Nominal';
-
-    el.className = 'pilar-estado ' + estado;
-    el.querySelector('.txt').textContent = texto;
-  });
-}
-
-// Último valor numérico recibido de cada métrica de la matriz
-const crudos = {};
-
-const celdas = new Map();   // métricas de la matriz (no signos vitales)
+const celdas = new Map();
 
 /* Pinta una celda de la matriz. Misma regla que los vitales:
    null = SIN MEDICIÓN, nunca un valor por defecto. */
@@ -193,7 +134,7 @@ function pintarCelda(campo, valor) {
   nodo.classList.remove('alerta', 'critico', 'sin-dato');
   const barra = nodo.querySelector('.celda-barra span');
 
-  if (valor === null) {
+  if (valor === null || valor === undefined) {
     nodo.classList.add('sin-dato');
     nodo.querySelector('.celda-valor').textContent = SIN_DATO;
     nodo.querySelector('.celda-umbral').textContent = 'SIN MEDICIÓN';
@@ -214,6 +155,37 @@ function pintarCelda(campo, valor) {
                     : cruza(valor, def.alerta)  ? 'alerta' : 'ok');
   }
 }
+
+/* Resumen de cada peligro, al lado de su letra: el peor estado que tenga
+   adentro. Se lee de un vistazo sin recorrer las 14 métricas. */
+function actualizarEstadoPilares() {
+  config.grupos.forEach(g => {
+    let crit = 0, alert = 0, sinDato = 0;
+    g.metricas.forEach(m => {
+      const v = crudos[m.campo];
+      if (v === null || v === undefined) { sinDato++; return; }
+      if (cruza(v, m.critico))     crit++;
+      else if (cruza(v, m.alerta)) alert++;
+    });
+
+    const el = document.querySelector(`[data-estado="${g.letra}"]`);
+    if (!el) return;
+
+    const estado = crit ? 'critico' : alert ? 'alerta'
+                 : sinDato === g.metricas.length ? 'sin-dato' : 'ok';
+    const texto  = crit  ? `${crit} crítico${crit > 1 ? 's' : ''}`
+                 : alert ? `${alert} en alerta`
+                 : estado === 'sin-dato' ? 'Sin medición'
+                 : 'Nominal';
+
+    el.className = 'pilar-estado ' + estado;
+    el.querySelector('.txt').textContent = texto;
+  });
+}
+
+// Último valor numérico recibido de cada métrica de la matriz
+const crudos = {};
+
 
 /* ===== Mapa del tripulante ===============================================
    Los puntos salen de las métricas que tienen "zona" en metricas.json.
@@ -370,7 +342,7 @@ function aplicar(p) {
     const v = porRuta(p, m.ruta);
     crudos[m.campo] = v;
     ultimos[m.campo] = v === null ? null : v.toFixed(m.decimales ?? 0);
-    if (celdas.has(m.campo)) pintarCelda(m.campo, v);
+    pintarCelda(m.campo, v);
     if (m.zona) {
       pintarZona(m.campo, v === null ? 'sin-dato'
                : cruza(v, m.critico) ? 'critico'
@@ -401,6 +373,16 @@ document.querySelectorAll('.riel-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.riel-btn').forEach(b => b.classList.remove('activo'));
     btn.classList.add('activo');
+
+    const destino = btn.dataset.ir;
+    if (destino === 'inicio') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+
+    const nodo = $(destino);
+    if (!nodo) return;
+    nodo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Un destello para que se vea adónde fuiste
+    nodo.classList.add('resaltado');
+    setTimeout(() => nodo.classList.remove('resaltado'), 1100);
   });
 });
 

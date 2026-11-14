@@ -18,13 +18,13 @@
   <nav class="riel">
     <div class="riel-marca" title="Z.E.U.S">Z</div>
 
-    <button class="riel-btn activo" data-vista="cockpit" title="Telemetría">
+    <button class="riel-btn activo" data-ir="inicio" title="Telemetría">
       <svg viewBox="0 0 24 24"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
     </button>
-    <button class="riel-btn" data-vista="camara" title="Cámara">
+    <button class="riel-btn" data-ir="panelCamara" title="Cámara">
       <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
     </button>
-    <button class="riel-btn" data-vista="analisis" title="Análisis">
+    <button class="riel-btn" data-ir="panelAnalisis" title="Análisis">
       <svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
     </button>
 
@@ -42,7 +42,6 @@
     <header class="cabecera">
       <div>
         <h1>Z.E.U.S</h1>
-        <p class="sub">Telemetría · tránsito a Marte · operación médica sin apoyo de la Tierra</p>
       </div>
       <div class="cabecera-der">
         <span class="met" id="reloj">MET +000:00:00:00</span>
@@ -90,46 +89,68 @@
             <span class="pista">Tocá un punto para ver la métrica</span>
           </div>
 
-          <!-- ================================================================
-               ACÁ VA EL RENDER DE TU COMPAÑERA.
-               Reemplazá el <svg class="silueta"> por:
-                   <img src="assets/cuerpo.png" alt="">        (imagen)
-                   <canvas id="lienzoRender"></canvas>          (3D)
-               Los puntos se posicionan en % sobre este contenedor, así que
-               siguen funcionando con cualquier render del mismo encuadre.
-               ================================================================ -->
+          <!-- ACÁ VA EL RENDER DE TU COMPAÑERA: reemplazá este <svg> por
+               <img src="assets/cuerpo.png" alt=""> o <canvas id="lienzoRender">.
+               Los puntos se posicionan en % sobre el contenedor, así que
+               siguen funcionando con cualquier render del mismo encuadre. -->
           <div class="figura" id="figura">
-            <svg class="silueta" viewBox="0 0 200 440" aria-hidden="true">
+            <svg class="silueta" viewBox="0 0 240 520" aria-hidden="true">
               <defs>
-                <linearGradient id="gCuerpo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stop-color="#5b9cf8" stop-opacity=".30"/>
-                  <stop offset="55%"  stop-color="#2f6fed" stop-opacity=".20"/>
-                  <stop offset="100%" stop-color="#1e4bb8" stop-opacity=".13"/>
+                <linearGradient id="piel" x1="0" y1="0" x2="0.3" y2="1">
+                  <stop offset="0%"   stop-color="#7cb2ff" stop-opacity=".30"/>
+                  <stop offset="55%"  stop-color="#3f7fe8" stop-opacity=".20"/>
+                  <stop offset="100%" stop-color="#2f6fed" stop-opacity=".12"/>
                 </linearGradient>
-                <filter id="brillo" x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="2.2" result="b"/>
+                <radialGradient id="nucleo">
+                  <stop offset="0%"   stop-color="#ff8a3d" stop-opacity=".55"/>
+                  <stop offset="60%"  stop-color="#ff6b35" stop-opacity=".18"/>
+                  <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+                </radialGradient>
+                <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3.2" result="b"/>
                   <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                 </filter>
               </defs>
 
-              <g filter="url(#brillo)" fill="url(#gCuerpo)"
-                 stroke="#2f6fed" stroke-opacity=".42" stroke-width="1.1">
-                <!-- cabeza y cuello -->
-                <ellipse cx="100" cy="36" rx="23" ry="28"/>
-                <path d="M92 62h16v14H92z"/>
-                <!-- torso -->
-                <path d="M100 74c-19 0-32 7-35 18-3 12-3 30-1 44 2 13 4 26 3 38 0 9 1 15 4 18h58c3-3 4-9 4-18-1-12 1-25 3-38 2-14 2-32-1-44-3-11-16-18-35-18z"/>
-                <!-- brazos -->
-                <path d="M65 95c-9 4-14 13-17 26-3 14-6 31-7 44-1 7 1 11 5 11s6-4 7-11c2-13 6-29 9-41 3-11 5-19 8-24z"/>
-                <path d="M135 95c9 4 14 13 17 26 3 14 6 31 7 44 1 7-1 11-5 11s-6-4-7-11c-2-13-6-29-9-41-3-11-5-19-8-24z"/>
-                <!-- piernas -->
-                <path d="M86 196c-2 22-5 50-6 74-1 20-1 44 1 60 1 8 3 12 7 12s6-4 6-13c1-18 2-40 3-58 1-20 2-45 2-63z"/>
-                <path d="M114 196c2 22 5 50 6 74 1 20 1 44-1 60-1 8-3 12-7 12s-6-4-6-13c-1-18-2-40-3-58-1-20-2-45-2-63z"/>
+              <!-- Arcos de interfaz detrás del cuerpo -->
+              <g fill="none" stroke="#2f6fed" stroke-opacity=".16" stroke-width="1.2">
+                <path d="M46 96a96 96 0 0 0 0 300"/>
+                <path d="M194 96a96 96 0 0 1 0 300"/>
+                <path d="M62 128a76 76 0 0 0 0 236" stroke-opacity=".09"/>
+                <path d="M178 128a76 76 0 0 1 0 236" stroke-opacity=".09"/>
               </g>
 
-              <!-- sistema circulatorio, apenas sugerido -->
-              <g stroke="#2f6fed" stroke-opacity=".22" stroke-width=".7" fill="none">
-                <path d="M100 80v110M100 96l-22 16M100 96l22 16M100 140l-16 26M100 140l16 26"/>
+              <!-- Resplandor del core: tórax y abdomen -->
+              <ellipse cx="120" cy="168" rx="52" ry="62" fill="url(#nucleo)"/>
+
+              <!-- Cuerpo -->
+              <g filter="url(#halo)" fill="url(#piel)" stroke="#2f6fed" stroke-opacity=".46" stroke-width="1.15">
+                <ellipse cx="120" cy="42" rx="26" ry="32"/>
+                <path d="M110 72h20v16h-20z"/>
+                <path d="M120 86c-22 0-37 8-41 21-4 14-3 35-1 51 2 15 5 31 4 45 0 11 1 18 5 21h66c4-3 5-10 5-21-1-14 2-30 4-45 2-16 3-37-1-51-4-13-19-21-41-21z"/>
+                <path d="M76 110c-11 5-16 16-20 31-4 17-7 37-8 52-1 8 1 13 6 13s7-5 8-13c2-15 7-34 11-48 3-13 6-23 9-29z"/>
+                <path d="M164 110c11 5 16 16 20 31 4 17 7 37 8 52 1 8-1 13-6 13s-7-5-8-13c-2-15-7-34-11-48-3-13-6-23-9-29z"/>
+                <path d="M102 230c-3 26-6 59-7 87-1 24-1 52 1 71 1 9 4 14 9 14s7-5 7-15c1-21 2-47 3-68 1-24 2-53 2-75z"/>
+                <path d="M138 230c3 26 6 59 7 87 1 24 1 52-1 71-1 9-4 14-9 14s-7-5-7-15c-1-21-2-47-3-68-1-24-2-53-2-75z"/>
+              </g>
+
+              <!-- Circulatorio y nervioso, sugeridos -->
+              <g fill="none" stroke="#ff8a3d" stroke-opacity=".40" stroke-width="1.05" stroke-linecap="round">
+                <path d="M120 96v126M120 118l-26 18M120 118l26 18M120 160l-19 30M120 160l19 30"/>
+                <path d="M120 222c-7 20-10 46-11 74M120 222c7 20 10 46 11 74"/>
+                <path d="M94 136c-8 10-13 26-16 44M146 136c8 10 13 26 16 44"/>
+              </g>
+              <g fill="#ff8a3d" fill-opacity=".5">
+                <circle cx="120" cy="104" r="2.4"/><circle cx="120" cy="150" r="3.1"/>
+                <circle cx="120" cy="196" r="2.4"/><circle cx="101" cy="190" r="1.9"/>
+                <circle cx="139" cy="190" r="1.9"/>
+              </g>
+
+              <!-- Plataforma -->
+              <g fill="none" stroke="#2f6fed">
+                <ellipse cx="120" cy="486" rx="68" ry="13" stroke-opacity=".30"/>
+                <ellipse cx="120" cy="486" rx="48" ry="9"  stroke-opacity=".20"/>
+                <ellipse cx="120" cy="486" rx="28" ry="5"  stroke-opacity=".12"/>
               </g>
             </svg>
 
@@ -154,7 +175,7 @@
       <div class="col-der">
 
         <!-- ===== CÁMARA · MediaPipe ================================ -->
-        <section class="tarjeta camara">
+        <section class="tarjeta camara" id="panelCamara">
           <div class="tarjeta-cab">
             <h2>Cámara</h2>
             <span class="cam-estado apagada" id="camEstado">
@@ -246,23 +267,16 @@
             <span class="ecg-bpm sin-dato" id="ecgBpm">— lpm</span>
           </div>
           <canvas id="ecgCanvas" class="ecg-canvas"></canvas>
-          <p class="ecg-nota">
-            <b>Trazado sintético.</b> El daemon envía la frecuencia, no muestras de voltaje:
-            el ritmo que ves es el medido, la forma de onda es generada. Sirve para leer el
-            ritmo, no para diagnosticar.
-          </p>
         </section>
       </div>
 
       <!-- ===== BANDA INFERIOR · Matriz RIDGE ========================= -->
-      <section class="tarjeta banda">
+      <section class="tarjeta banda" id="panelAnalisis">
         <div class="tarjeta-cab">
           <h2>Análisis — Matriz biomédica NASA RIDGE</h2>
           <span class="pista">5 peligros del vuelo espacial humano</span>
         </div>
-        <!-- Un botón por peligro. Al tocarlo se abre su análisis debajo. -->
-        <div class="pilar-botones" id="pilarBotones" role="tablist"></div>
-        <div class="pilar-detalle" id="pilarDetalle"></div>
+        <div class="pilares" id="grupos"></div>
         <div class="leyenda" id="leyenda"></div>
       </section>
 
