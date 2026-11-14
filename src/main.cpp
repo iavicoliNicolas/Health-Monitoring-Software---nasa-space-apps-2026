@@ -256,6 +256,7 @@ int main(int argc, char* argv[]) {
     while (g_keep_running.load()) {
         auto tick_start = std::chrono::steady_clock::now();
 
+        RidgePayload commanded;
         RidgePayload current_sample;
         {
             std::lock_guard<std::mutex> lock(state_mutex);
@@ -267,10 +268,12 @@ int main(int argc, char* argv[]) {
                 state.telemetry_ridge.E_environment.body_temperature_c >= 20.0;
 
             state.timestamp = RidgePayload::current_iso8601();
+            state.health_score = flight_surgeon.compute_health_score(state);
+            commanded = state;
             current_sample = state;
 
-            // Jitter only the sample that goes out. Writing it back was a random walk:
-            // a nominal heart rate or ppCO2 eventually crossed a clinical threshold on its own.
+            // Jitter only the numbers on the wire. Alerts and the health score stay on the
+            // commanded value, so a ±1 bpm flicker cannot open and close a clinical alarm.
             if (sensors_plausible) {
                 current_sample.telemetry_ridge.G_gravity.heart_rate_bpm = std::clamp(
                     state.telemetry_ridge.G_gravity.heart_rate_bpm + hr_noise(gen), 40, 180);
@@ -279,19 +282,17 @@ int main(int argc, char* argv[]) {
                 current_sample.telemetry_ridge.E_environment.body_temperature_c = std::clamp(
                     state.telemetry_ridge.E_environment.body_temperature_c + noise_dist(gen) * 0.02, 34.0, 42.0);
             }
-
-            current_sample.health_score = flight_surgeon.compute_health_score(current_sample);
-            state.health_score = current_sample.health_score;
+            current_sample.health_score = state.health_score;
         }
 
-        // 1. Push to circular buffer
-        telemetry_buffer.push(current_sample);
+        // 1. Archive the commanded sample. The jitter is display-only.
+        telemetry_buffer.push(commanded);
 
         // 2. Evaluate SOMA watchdog conditions
-        soma_watchdog.evaluate_survival_state(current_sample);
+        soma_watchdog.evaluate_survival_state(commanded);
 
-        // 3. Evaluate clinical decision thresholds (Flight Surgeon AI)
-        std::vector<ClinicalAlert> alerts = flight_surgeon.evaluate(current_sample);
+        // 3. Clinical thresholds use the commanded physiology, not the display jitter.
+        std::vector<ClinicalAlert> alerts = flight_surgeon.evaluate(commanded);
 
         // 4. Broadcast RIDGE payload JSON over WebSocket
         std::string ridge_json = current_sample.to_json();
