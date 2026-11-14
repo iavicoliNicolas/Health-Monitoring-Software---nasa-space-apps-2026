@@ -73,7 +73,146 @@ async function construir() {
     tarjetas.set(v.campo, { nodo: document.querySelector(`[data-campo="${v.campo}"]`), def: v });
   });
 
+  construirMatriz();
   construirPuntos();
+}
+
+/* ===== Matriz RIDGE ======================================================
+   Un pilar por peligro. Igual que los signos vitales: el HTML no sabe nada
+   de umbrales, todo sale de data/metricas.json.
+   ======================================================================== */
+function textoUmbral(m) {
+  if (m.critico) return `Crítico: ${m.critico.op}${m.critico.valor} ${m.unidad}`.trim();
+  if (m.alerta)  return `Alerta: ${m.alerta.op}${m.alerta.valor} ${m.unidad}`.trim();
+  return 'Sin umbral definido';
+}
+
+function construirMatriz() {
+  $('leyenda').innerHTML =
+    '<span class="leyenda-item leyenda-titulo">Nivel de evidencia</span>' +
+    Object.entries(config._niveles).map(([k, v]) =>
+      `<span class="leyenda-item"><span class="ev ev-${k.toLowerCase()}">${k}</span>${v}</span>`
+    ).join('');
+
+  // Un botón por peligro
+  $('pilarBotones').innerHTML = config.grupos.map((g, i) => `
+    <button class="pilar-btn${i === 0 ? ' activo' : ''}" data-pilar="${g.letra}" role="tab">
+      <span class="pilar-btn-fila">
+        <span class="pilar-letra">${g.letra}</span>
+        <span class="pilar-titulo">${g.titulo}</span>
+      </span>
+      <span class="pilar-estado sin-dato" data-estado="${g.letra}">
+        <span class="punto"></span><span class="txt">Sin medición</span>
+      </span>
+    </button>`).join('');
+
+  document.querySelectorAll('.pilar-btn').forEach(btn => {
+    btn.addEventListener('click', () => abrirPilar(btn.dataset.pilar));
+  });
+
+  abrirPilar(config.grupos[0].letra);
+}
+
+/* Dibuja el análisis del peligro elegido. Las celdas se recrean cada vez,
+   así que el índice se rearma y después se repintan con el último payload. */
+function abrirPilar(letra) {
+  const g = config.grupos.find(x => x.letra === letra);
+  if (!g) return;
+
+  document.querySelectorAll('.pilar-btn').forEach(b =>
+    b.classList.toggle('activo', b.dataset.pilar === letra));
+
+  $('pilarDetalle').innerHTML = `
+    <div class="pilar-detalle-cab">
+      <b>${g.titulo}</b>
+      <p>${g.resumen || ''}</p>
+    </div>
+    <div class="pilar-grilla">
+      ${g.metricas.map(m => `
+        <div class="celda sin-dato" data-celda="${m.campo}" title="${m.fuente}">
+          <span class="ev ev-${m.nivel.toLowerCase()}" title="${m.nivel} · ${m.fuente}">${m.nivel}</span>
+          <span class="celda-nombre">${m.nombre}</span>
+          <div class="celda-fila">
+            <span class="celda-valor">${SIN_DATO}</span>
+            <span class="celda-unidad">${m.unidad}</span>
+          </div>
+          <span class="celda-umbral">${textoUmbral(m)}</span>
+          ${m.barra ? '<div class="celda-barra"><span></span></div>' : ''}
+        </div>`).join('')}
+    </div>`;
+
+  celdas.clear();
+  g.metricas.forEach(m => {
+    celdas.set(m.campo, { nodo: document.querySelector(`[data-celda="${m.campo}"]`), def: m });
+  });
+
+  // Repintar con lo último que llegó, para que abrir un pilar no lo vacíe
+  celdas.forEach(({ def }, campo) => pintarCelda(campo, crudos[campo] ?? null));
+}
+
+/* Resumen de cada peligro en su botón: el peor estado de sus métricas.
+   Así se ve qué pilar tiene un problema sin tener que abrirlo. */
+function actualizarEstadoPilares() {
+  config.grupos.forEach(g => {
+    let crit = 0, alert = 0, sinDato = 0;
+    g.metricas.forEach(m => {
+      const v = crudos[m.campo];
+      if (v === null || v === undefined) { sinDato++; return; }
+      if (cruza(v, m.critico))     crit++;
+      else if (cruza(v, m.alerta)) alert++;
+    });
+
+    const el = document.querySelector(`[data-estado="${g.letra}"]`);
+    if (!el) return;
+
+    const estado = crit ? 'critico' : alert ? 'alerta'
+                 : sinDato === g.metricas.length ? 'sin-dato' : 'ok';
+    const texto  = crit  ? `${crit} crítico${crit > 1 ? 's' : ''}`
+                 : alert ? `${alert} en alerta`
+                 : estado === 'sin-dato' ? 'Sin medición'
+                 : sinDato ? `Nominal · ${sinDato} sin medir`
+                 : 'Nominal';
+
+    el.className = 'pilar-estado ' + estado;
+    el.querySelector('.txt').textContent = texto;
+  });
+}
+
+// Último valor numérico recibido de cada métrica de la matriz
+const crudos = {};
+
+const celdas = new Map();   // métricas de la matriz (no signos vitales)
+
+/* Pinta una celda de la matriz. Misma regla que los vitales:
+   null = SIN MEDICIÓN, nunca un valor por defecto. */
+function pintarCelda(campo, valor) {
+  const e = celdas.get(campo);
+  if (!e) return;
+  const { nodo, def } = e;
+
+  nodo.classList.remove('alerta', 'critico', 'sin-dato');
+  const barra = nodo.querySelector('.celda-barra span');
+
+  if (valor === null) {
+    nodo.classList.add('sin-dato');
+    nodo.querySelector('.celda-valor').textContent = SIN_DATO;
+    nodo.querySelector('.celda-umbral').textContent = 'SIN MEDICIÓN';
+    if (barra) barra.style.width = '0%';
+    if (def.zona) pintarZona(campo, 'sin-dato');
+    return;
+  }
+
+  nodo.querySelector('.celda-valor').textContent = valor.toFixed(def.decimales ?? 0);
+  nodo.querySelector('.celda-umbral').textContent = textoUmbral(def);
+  if (barra) barra.style.width = Math.min(100, (valor / def.barra) * 100) + '%';
+
+  if (cruza(valor, def.critico))     nodo.classList.add('critico');
+  else if (cruza(valor, def.alerta)) nodo.classList.add('alerta');
+
+  if (def.zona) {
+    pintarZona(campo, cruza(valor, def.critico) ? 'critico'
+                    : cruza(valor, def.alerta)  ? 'alerta' : 'ok');
+  }
 }
 
 /* ===== Mapa del tripulante ===============================================
@@ -197,6 +336,10 @@ function pintarPuntaje(valor) {
    ======================================================================== */
 function todoSinMedicion(motivo) {
   tarjetas.forEach((_, campo) => pintarVital(campo, null));
+  Object.keys(crudos).forEach(k => crudos[k] = null);
+  celdas.forEach((_, campo) => pintarCelda(campo, null));
+  if (config) actualizarEstadoPilares();
+  ECG.sinDato();
   zonas.forEach(z => pintarZona(z.campo, 'sin-dato'));
   pintarPuntaje(null);
   $('detalle').classList.add('oculto');
@@ -221,8 +364,24 @@ function aplicar(p) {
     }
   });
 
-  // Métricas que no son signos vitales, para el detalle del mapa
-  zonas.forEach(z => { ultimos[z.campo] = porRuta(p, z.ruta); });
+  // Matriz RIDGE: se guarda el valor de TODAS las métricas, no sólo las del
+  // pilar abierto, para que el resumen de los botones sea completo.
+  config.grupos.flatMap(g => g.metricas).forEach(m => {
+    const v = porRuta(p, m.ruta);
+    crudos[m.campo] = v;
+    ultimos[m.campo] = v === null ? null : v.toFixed(m.decimales ?? 0);
+    if (celdas.has(m.campo)) pintarCelda(m.campo, v);
+    if (m.zona) {
+      pintarZona(m.campo, v === null ? 'sin-dato'
+               : cruza(v, m.critico) ? 'critico'
+               : cruza(v, m.alerta)  ? 'alerta' : 'ok');
+    }
+  });
+
+  actualizarEstadoPilares();
+
+  // El trazado sigue la frecuencia medida. Sin dato, línea plana gris.
+  ECG.bpm(porRuta(p, 'telemetry_ridge.G_gravity.heart_rate_bpm'));
 }
 window.VitalGrid = { aplicar, todoSinMedicion };   // para probar desde la consola
 

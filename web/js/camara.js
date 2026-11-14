@@ -117,6 +117,19 @@ export async function encender() {
   }
 }
 
+export function apagar() {
+  corriendo = false;
+
+  // Cortar el stream de verdad: si no se paran las pistas, la luz de la
+  // cámara queda encendida aunque el video ya no se vea.
+  const stream = video.srcObject;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
+
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  alAvisar({ camara: 'apagada', log: 'Cámara apagada. No se está midiendo.' });
+}
+
 export function calibrar() {
   calibrando = true;
   tCal = performance.now();

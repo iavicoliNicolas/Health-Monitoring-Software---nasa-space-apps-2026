@@ -100,17 +100,58 @@ function alAviso(a) {
   }
 
   if (a.camara === 'encendida') {
+    encendida = true;
     $('camOff').hidden = true;
     estadoCamara('encendida', 'Cámara encendida');
-    $('btnEncender').disabled = true;
+    botonApagar();
     $('btnCalibrar').disabled = false;
     $('btnReiniciar').disabled = false;
     $('btnFijarDia1').disabled = false;
   }
-  if (a.camara === 'error') {
-    estadoCamara('error', 'Error de cámara');
-    $('btnEncender').disabled = false;
+
+  if (a.camara === 'apagada') {
+    encendida = false;
+    $('camOff').hidden = false;
+    estadoCamara('apagada', 'Cámara apagada');
+    botonEncender();
+    $('btnCalibrar').disabled = true;
+    $('btnReiniciar').disabled = true;
+    $('btnFijarDia1').disabled = true;
+    // Las métricas de la cámara dejan de ser actuales: a SIN MEDICIÓN.
+    ['vEar', 'vParpadeos', 'vDuracion', 'vFps'].forEach(id => $(id).textContent = '—');
+    $('dPerclos').querySelector('b').textContent = '—';
+    $('dMicro').querySelector('b').textContent = '—';
+    $('dPerclos').className = 'destacado';
+    $('dMicro').className = 'destacado';
+    $('estadoOjo').className = 'estado-ojo sin-dato';
+    $('estadoOjo').textContent = 'Sin medir';
+    window.VitalGrid?.desdeCamara?.({ parpadeos_min: null, perclos_pct: null, microsuenos: null });
   }
+  if (a.camara === 'error') {
+    encendida = false;
+    estadoCamara('error', 'Error de cámara');
+    botonEncender();
+  }
+}
+
+/* --- El botón es un interruptor ------------------------------------------
+   Un solo botón que prende y apaga. Dos botones separados obligan a mirar
+   cuál está habilitado para saber en qué estado estás.
+   ------------------------------------------------------------------------- */
+let encendida = false;
+
+function botonEncender() {
+  const b = $('btnEncender');
+  b.textContent = 'Encender';
+  b.className = 'btn';
+  b.disabled = false;
+}
+
+function botonApagar() {
+  const b = $('btnEncender');
+  b.textContent = 'Apagar';
+  b.className = 'btn btn-sec';
+  b.disabled = false;
 }
 
 /* --- Estado visible de la cámara ----------------------------------------
@@ -132,6 +173,7 @@ Camara.iniciar({
 });
 
 $('btnEncender').addEventListener('click', () => {
+  if (encendida) { Camara.apagar(); return; }
   $('btnEncender').disabled = true;
   $('camLog').textContent = 'Pidiendo permiso de cámara…';
   Camara.encender();

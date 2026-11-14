@@ -92,10 +92,10 @@ body {
 }
 
 .riel-marca {
-  width: 38px; height: 38px; border-radius: 11px;
+  width: 38px; height: 38px; border-radius: 50%;
   display: grid; place-items: center;
   background: var(--tinta); color: #fff;
-  font-weight: 800; font-size: .78rem; letter-spacing: .04em;
+  font-weight: 800; font-size: 1.1rem; letter-spacing: 0;
   margin-bottom: 14px;
 }
 
@@ -130,7 +130,7 @@ body {
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: var(--gap); flex-wrap: wrap;
 }
-.cabecera h1 { margin: 0; font-size: 1.32rem; font-weight: 650; letter-spacing: -.01em; }
+.cabecera h1 { margin: 0; font-size: 1.32rem; font-weight: 700; letter-spacing: .06em; }
 .sub { margin: 2px 0 0; color: var(--tinta-2); font-size: .82rem; }
 
 .cabecera-der { display: flex; align-items: center; gap: 10px; }
@@ -353,6 +353,9 @@ body {
   align-items: center; justify-content: center; gap: 7px;
   color: #5b7389; font-size: .74rem;
 }
+/* `display:flex` le gana al atributo [hidden], así que hay que decirlo. */
+.cam-off[hidden] { display: none; }
+
 .cam-off svg { width: 26px; height: 26px; fill: none; stroke: currentColor;
                stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -492,3 +495,142 @@ body {
 .cam-estado.apagada   { color: var(--sin-dato); background: var(--sin-dato-suave); }
 .cam-estado.encendida { color: var(--ok);       background: var(--ok-suave); }
 .cam-estado.error     { color: var(--critico);  background: var(--critico-suave); }
+
+/* ===== Matriz RIDGE · botones + detalle ==================================
+   Cinco peligros, cinco botones. Mostrar las 14 métricas a la vez obliga a
+   barrer toda la banda para encontrar lo que importa; así cada peligro se
+   abre cuando lo pedís, y el botón ya avisa si adentro hay algo mal.
+   ======================================================================== */
+.pilar-botones {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 860px) { .pilar-botones { grid-template-columns: repeat(2, 1fr); } }
+
+.pilar-btn {
+  position: relative;
+  display: flex; flex-direction: column; gap: 4px;
+  text-align: left; font: inherit; cursor: pointer;
+  padding: 13px 14px;
+  border: 1px solid var(--linea); border-radius: var(--r-chico);
+  background: var(--blanco); color: var(--tinta);
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.pilar-btn:hover { border-color: var(--acento); transform: translateY(-1px); }
+
+.pilar-btn.activo {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+  box-shadow: inset 0 0 0 1px var(--acento);
+}
+
+.pilar-btn-fila { display: flex; align-items: center; gap: 8px; }
+.pilar-letra {
+  width: 22px; height: 22px; border-radius: 6px; flex: 0 0 22px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: .74rem;
+  color: var(--acento); background: var(--acento-suave);
+}
+.pilar-btn.activo .pilar-letra { background: var(--blanco); }
+.pilar-titulo { font-size: .82rem; font-weight: 620; }
+
+.pilar-estado {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .68rem; color: var(--tinta-2);
+}
+.pilar-estado .punto { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: 0 0 7px; }
+.pilar-estado.ok       { color: var(--ok); }
+.pilar-estado.alerta   { color: var(--alerta); }
+.pilar-estado.critico  { color: var(--critico); }
+.pilar-estado.sin-dato { color: var(--sin-dato); }
+
+/* --- Detalle del pilar abierto --- */
+.pilar-detalle {
+  padding: 15px 16px; margin-bottom: 14px;
+  border-radius: var(--r-chico); background: var(--fondo-2);
+}
+.pilar-detalle-cab { margin-bottom: 11px; }
+.pilar-detalle-cab b { font-size: .86rem; }
+.pilar-detalle-cab p { margin: 2px 0 0; font-size: .72rem; color: var(--tinta-2); }
+
+.pilar-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 9px;
+}
+
+.celda {
+  position: relative;
+  padding: 10px 11px;
+  border-radius: var(--r-chico);
+  background: var(--blanco);
+}
+.celda-nombre { font-size: .66rem; color: var(--tinta-2); padding-right: 26px; }
+.celda-fila   { display: flex; align-items: baseline; gap: 4px; margin-top: 1px; }
+.celda-valor  {
+  font-family: var(--mono); font-size: 1.14rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.celda-unidad { font-size: .64rem; color: var(--tinta-3); }
+.celda-umbral { display: block; margin-top: 3px; font-size: .6rem; color: var(--tinta-3); }
+
+.celda-barra { height: 3px; border-radius: 999px; background: #e2e8f0; margin-top: 6px; overflow: hidden; }
+.celda-barra span { display: block; height: 100%; width: 0%; background: var(--ok); transition: width .4s, background .3s; }
+
+/* --- Los tres estados, iguales que en los signos vitales --- */
+.celda.alerta  { background: var(--alerta-suave); }
+.celda.alerta  .celda-valor { color: var(--alerta); }
+.celda.alerta  .celda-barra span { background: var(--alerta); }
+
+.celda.critico { background: var(--critico-suave); }
+.celda.critico .celda-valor { color: var(--critico); }
+.celda.critico .celda-barra span { background: var(--critico); }
+
+.celda.sin-dato .celda-valor,
+.celda.sin-dato .celda-nombre,
+.celda.sin-dato .celda-unidad,
+.celda.sin-dato .celda-umbral { color: var(--sin-dato); }
+.celda.sin-dato .celda-barra span { background: var(--sin-dato); }
+
+.celda .ev { top: 8px; right: 9px; }
+
+/* --- Leyenda de niveles de evidencia --- */
+.leyenda {
+  display: flex; flex-wrap: wrap; gap: 13px; align-items: center;
+  padding: 9px 12px; margin-bottom: 14px;
+  border-radius: var(--r-chico); background: var(--fondo-2);
+  font-size: .64rem; color: var(--tinta-2);
+}
+.leyenda .ev { position: static; margin-right: 5px; }
+.leyenda-item { display: flex; align-items: center; }
+.leyenda-titulo {
+  font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  font-size: .6rem; color: var(--tinta-3);
+}
+
+/* ===== Trazado cardíaco ================================================== */
+.ecg-canvas {
+  width: 100%; height: 120px; display: block;
+  border-radius: var(--r-chico); background: var(--fondo-2);
+}
+.ecg-bpm {
+  font-family: var(--mono); font-size: .78rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--critico);
+  background: var(--critico-suave); padding: 3px 10px; border-radius: 999px;
+}
+.ecg-bpm.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
+.ecg-nota { margin: 9px 0 0; font-size: .66rem; line-height: 1.45; color: var(--tinta-3); }
+.ecg-nota b { color: var(--tinta-2); }
+
+/* --- Nombre de la app, vertical sobre el borde izquierdo --------------- */
+.riel-nombre {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);          /* se lee de abajo hacia arriba */
+  font-size: .66rem; font-weight: 700;
+  letter-spacing: .38em;
+  color: var(--tinta-3);
+  margin-bottom: 16px;
+  user-select: none;
+}
