@@ -1,1620 +1,625 @@
-/* ==========================================================================
-   VitalGrid - Crew Dragon Aerospace Glass Cockpit Design System
-   NASA Space Apps Challenge - Deep Space Medical Telemetry Dashboard
-   100% Offline System Font Stack (Zero external CDN dependencies)
-   ========================================================================== */
+/* ===========================================================================
+   VitalGrid · hoja de estilos
+   PARTE 1 — estructura y paleta
 
+   Tres reglas que sostienen todo el diseño:
+
+   1. EL COLOR SE RESERVA PARA EL ESTADO. La estructura la hacen los grises
+      y el espacio. Si el azul está en los títulos, en los bordes y en los
+      iconos, cuando algo esté mal nadie lo va a notar.
+
+   2. SANS PARA TEXTO, MONO SÓLO PARA NÚMEROS. La mono en texto corrido
+      lee como terminal de película.
+
+   3. SE AGRUPA CON AIRE, NO CON BORDES. Una tarjeta blanca sobre fondo
+      gris claro ya separa: no hace falta encerrarla.
+   =========================================================================== */
+
+/* --- PALETA · clara y limpia ---------------------------------------------
+   Tres reglas que la sostienen:
+   1. EL COLOR SE RESERVA PARA EL ESTADO. La estructura la hacen los grises
+      y el espacio. Si el azul está en los títulos, los bordes y los iconos,
+      cuando algo esté mal nadie lo va a notar.
+   2. SANS PARA TEXTO, MONO SÓLO PARA NÚMEROS.
+   3. SE AGRUPA CON AIRE, NO CON BORDES. Una tarjeta blanca sobre gris claro
+      ya separa: no hace falta encerrarla.                                  */
 :root {
-  --bg-space: #06090e;
-  --bg-cockpit: #0b111a;
-  --surface-glass: rgba(14, 23, 38, 0.75);
-  --surface-glass-border: rgba(0, 243, 255, 0.18);
-  --surface-glass-hover: rgba(20, 34, 56, 0.85);
+  /* Superficies */
+  --fondo:        #eaeff5;
+  --fondo-2:      #f4f7fa;
+  --blanco:       #ffffff;
+  --linea:        #e2e8f0;
 
-  --hud-cyan: #00f3ff;
-  --hud-cyan-dim: rgba(0, 243, 255, 0.25);
-  --hud-cyan-glow: 0 0 20px rgba(0, 243, 255, 0.45);
+  /* Tinta */
+  --tinta:        #16293d;   /* azul muy oscuro, no negro puro */
+  --tinta-2:      #5b7389;
+  --tinta-3:      #91a5b8;
 
-  --bio-green: #00ff9d;
-  --bio-green-glow: 0 0 16px rgba(0, 255, 157, 0.45);
+  /* Acento: identidad, NO estado */
+  --acento:       #2f6fed;
+  --acento-suave: #e8f0ff;
 
-  --warn-amber: #ffb703;
-  --warn-amber-glow: 0 0 18px rgba(255, 183, 3, 0.5);
+  /* Estado: los únicos colores que informan */
+  --ok:           #0f9d6a;
+  --ok-suave:     #e4f6ee;
+  --alerta:       #d98300;
+  --alerta-suave: #fdf2e0;
+  --critico:      #e0455b;
+  --critico-suave:#fdecee;
+  --sin-dato:     #9aacbd;
+  --sin-dato-suave:#f0f3f7;
 
-  --crit-crimson: #ff0055;
-  --crit-crimson-glow: 0 0 24px rgba(255, 0, 85, 0.7);
+  /* Forma */
+  --r:      13px;
+  --r-chico:9px;
+  --gap:    11px;
+  --sombra: 0 1px 2px rgba(22,41,61,.04), 0 8px 24px rgba(22,41,61,.06);
 
-  --text-primary: #e6f1ff;
-  --text-secondary: #88a2b8;
-  --text-muted: #4e657c;
-
-  --font-display: 'Rajdhani', 'Bahnschrift', 'Segoe UI', system-ui, sans-serif;
-  --font-tech: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', ui-monospace, monospace;
-
-  --radius-hud: 12px;
-  --radius-sm: 6px;
-  --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Tipografía */
+  --fuente: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --titulo: var(--fuente);
+  --mono:   ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; }
 
 body {
-  background-color: var(--bg-space);
-  color: var(--text-primary);
-  font-family: var(--font-tech);
-  min-height: 100vh;
-  overflow-x: hidden;
-  position: relative;
-  background-image: 
-    radial-gradient(circle at 50% 10%, rgba(0, 243, 255, 0.05) 0%, transparent 60%),
-    radial-gradient(circle at 90% 80%, rgba(255, 0, 85, 0.03) 0%, transparent 50%),
-    linear-gradient(rgba(0, 243, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  margin: 0;
+  /* Guiño espacial: un degradé apenas perceptible, no un fondo estrellado.
+     La temática entra por el contenido, no por la decoración. */
+  background:
+    radial-gradient(1200px 600px at 78% -8%, #ffffff 0%, transparent 60%),
+    radial-gradient(900px 500px at 5% 105%, #e3ebf6 0%, transparent 55%),
+    var(--fondo);
+  background-attachment: fixed;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: 13px;
+  line-height: 1.42;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Scanline / Aerospace HUD Overlay */
-body::before {
-  content: " ";
-  display: block;
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-  background-size: 100% 4px;
-  z-index: 999;
-  pointer-events: none;
-  opacity: 0.35;
+/* ===== Esqueleto ========================================================= */
+.app { display: flex; min-height: 100vh; }
+
+/* --- Riel lateral --- */
+.riel {
+  flex: 0 0 58px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 12px 0;
+  background: var(--blanco);
+  border-right: 1px solid var(--linea);
 }
 
-/* App Header */
-.cockpit-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 28px;
-  background: rgba(8, 13, 21, 0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--surface-glass-border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.brand-section {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.nasa-logo-badge {
-  background: linear-gradient(135deg, #0b3d91, #1a56c4);
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  letter-spacing: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 10px rgba(26, 86, 196, 0.5);
-}
-
-.project-title {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  letter-spacing: 2px;
-  font-weight: 700;
-  color: #fff;
-  text-transform: uppercase;
-}
-
-.project-title span {
-  color: var(--hud-cyan);
-  text-shadow: var(--hud-cyan-glow);
-}
-
-.mission-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  background: rgba(0, 243, 255, 0.08);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 243, 255, 0.2);
-}
-
-.mission-clock-section {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.clock-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.clock-label {
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  letter-spacing: 1.5px;
-}
-
-.clock-val {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--hud-cyan);
-}
-
-.header-status-pills {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: var(--transition-fast);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-muted);
-}
-
-.status-pill.connected .status-dot {
-  background: var(--bio-green);
-  box-shadow: var(--bio-green-glow);
-  animation: pulse-dot 2s infinite;
-}
-
-.status-pill.disconnected .status-dot {
-  background: var(--crit-crimson);
-  box-shadow: var(--crit-crimson-glow);
-}
-
-.status-pill.soma-standby .status-dot {
-  background: var(--hud-cyan);
-  box-shadow: var(--hud-cyan-glow);
-}
-
-.status-pill.soma-active {
-  background: rgba(255, 0, 85, 0.15);
-  border-color: var(--crit-crimson);
-  color: var(--crit-crimson);
-  animation: flash-border 1s infinite alternate;
-}
-
-.status-pill.soma-active .status-dot {
-  background: var(--crit-crimson);
-  box-shadow: var(--crit-crimson-glow);
-}
-
-.btn-icon-hud {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--surface-glass-border);
-  color: var(--text-primary);
-  padding: 7px 12px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  transition: var(--transition-fast);
-}
-
-.btn-icon-hud:hover {
-  background: var(--hud-cyan-dim);
-  border-color: var(--hud-cyan);
-  color: #fff;
-}
-
-/* SOMA Active Emergency Alert Banner */
-.soma-emergency-strip {
-  display: none;
-  background: linear-gradient(90deg, rgba(255, 0, 85, 0.25), rgba(15, 5, 10, 0.95), rgba(255, 0, 85, 0.25));
-  border-bottom: 2px solid var(--crit-crimson);
-  padding: 12px 28px;
-  position: relative;
-  overflow: hidden;
-  animation: alert-slide-down 0.4s ease-out;
-}
-
-.soma-emergency-strip.visible {
-  display: block;
-}
-
-.soma-strip-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.soma-title-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.soma-pulse-beacon {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--crit-crimson);
-  box-shadow: var(--crit-crimson-glow);
-  animation: pulse-beacon 0.8s infinite;
-}
-
-.soma-banner-h1 {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #fff;
-  text-transform: uppercase;
-}
-
-.soma-banner-desc {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: #ff99bb;
-}
-
-.dsoc-laser-link-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-}
-
-.dsoc-badge {
-  background: rgba(0, 243, 255, 0.15);
-  border: 1px solid var(--hud-cyan);
-  color: var(--hud-cyan);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-}
-
-/* Cockpit Grid Layout (Crew Dragon 3-Column Glass Layout) */
-.cockpit-container {
-  display: grid;
-  grid-template-columns: 320px 1fr 380px;
-  gap: 20px;
-  padding: 24px 28px;
-  max-width: 1920px;
-  margin: 0 auto;
-}
-
-@media (max-width: 1400px) {
-  .cockpit-container {
-    grid-template-columns: 300px 1fr;
-  }
-  .cockpit-col.right-col {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 1024px) {
-  .cockpit-container {
-    grid-template-columns: 1fr;
-  }
-  .cockpit-col.right-col {
-    grid-column: span 1;
-  }
-}
-
-.cockpit-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Glass Panels */
-.glass-panel {
-  background: var(--surface-glass);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--surface-glass-border);
-  border-radius: var(--radius-hud);
-  padding: 18px 20px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  transition: var(--transition-fast);
-}
-
-.glass-panel::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 40px; height: 2px;
-  background: var(--hud-cyan);
-  box-shadow: var(--hud-cyan-glow);
-}
-
-.glass-panel:hover {
-  border-color: rgba(0, 243, 255, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.riel-marca {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--tinta); color: #fff;
+  font-weight: 800; font-size: 1.1rem; letter-spacing: 0;
   margin-bottom: 14px;
 }
 
-.panel-title {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--hud-cyan);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.riel-btn {
+  width: 42px; height: 42px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--tinta-3);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.riel-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.riel-btn:hover { background: var(--fondo-2); color: var(--tinta-2); }
+.riel-btn.activo { background: var(--acento-suave); color: var(--acento); }
+
+.riel-sep { flex: 1; }
+
+.riel-crew {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--acento-suave); color: var(--acento);
+  font-weight: 700; font-size: .74rem;
 }
 
-.panel-badge {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
+/* --- Hoja --- */
+.hoja {
+  flex: 1; min-width: 0;
+  padding: 10px 14px 12px;
+  display: flex; flex-direction: column; gap: var(--gap);
 }
 
-/* Crew Card */
-.crew-profile-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* --- Cabecera --- */
+.cabecera {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--gap);
+}
+.cabecera h1 { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; }
+.sub { margin: 2px 0 0; color: var(--tinta-2); font-size: .82rem; }
+
+.cabecera-der { display: flex; align-items: center; gap: 9px; margin-left: auto; flex: 0 0 auto; }
+
+.met {
+  font-family: var(--mono); font-size: .76rem; font-variant-numeric: tabular-nums;
+  color: var(--tinta-2);
+  background: var(--blanco); border: 1px solid var(--linea);
+  padding: 7px 12px; border-radius: 999px;
 }
 
-.crew-avatar-hexagon {
-  width: 54px;
-  height: 54px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #10223b, #004b6b);
-  border: 2px solid var(--hud-cyan);
-  box-shadow: var(--hud-cyan-glow);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #fff;
+.conexion {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .76rem; font-weight: 560;
+  padding: 7px 13px; border-radius: 999px;
+  background: var(--blanco); border: 1px solid var(--linea);
+}
+.conexion .punto { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.conexion.conectado    { color: var(--ok);       background: var(--ok-suave);       border-color: transparent; }
+.conexion.desconectado { color: var(--sin-dato); background: var(--sin-dato-suave); border-color: transparent; }
+
+/* ===== Tarjetas ========================================================== */
+.tarjeta {
+  background: var(--blanco);
+  border-radius: var(--r);
+  box-shadow: var(--sombra);
+  padding: 12px 13px;
 }
 
-.crew-meta h2 {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  color: #fff;
-  letter-spacing: 1px;
+.tarjeta-cab {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px; margin-bottom: 9px;
 }
+.tarjeta-cab h2 { margin: 0; font-size: .92rem; font-weight: 620; }
+.pista { font-size: .74rem; color: var(--tinta-3); }
 
-.crew-meta p {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  color: var(--text-secondary);
-}
-
-/* Health Score Ring Gauge */
-.health-score-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 0 16px;
-}
-
-.gauge-svg-wrap {
-  position: relative;
-  width: 170px;
-  height: 170px;
-}
-
-.gauge-svg {
-  transform: rotate(-90deg);
-  width: 100%;
-  height: 100%;
-}
-
-.gauge-track {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 12;
-}
-
-.gauge-progress {
-  fill: none;
-  stroke: var(--bio-green);
-  stroke-width: 12;
-  stroke-linecap: round;
-  stroke-dasharray: 440;
-  stroke-dashoffset: 44;
-  transition: stroke-dashoffset 0.6s ease, stroke 0.6s ease;
-  filter: drop-shadow(0 0 8px rgba(0, 255, 157, 0.6));
-}
-
-.gauge-center-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.score-num {
-  font-family: var(--font-display);
-  font-size: 2.8rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1;
-}
-
-.score-sub {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-/* Survival Triad */
-.survival-triad {
+/* ===== Layout principal ==================================================
+   Tres columnas + una banda ancha abajo, como el sketch:
+     izquierda  puntaje, signos vitales, simulacion
+     centro     mapa del tripulante
+     derecha    camara y ECG
+     banda      matriz RIDGE (necesita ancho: son 16 metricas)
+   ======================================================================== */
+.principal {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.survival-pill {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  transition: var(--transition-fast);
-}
-
-.survival-pill.nominal {
-  border-left: 3px solid var(--bio-green);
-}
-
-.survival-pill.danger {
-  border-left: 3px solid var(--crit-crimson);
-  background: rgba(255, 0, 85, 0.12);
-  color: #fff;
-  animation: pulse-danger-box 1.2s infinite;
-}
-
-.survival-pill .tag {
-  font-weight: 700;
-  font-size: 0.72rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.survival-pill.nominal .tag {
-  background: rgba(0, 255, 157, 0.15);
-  color: var(--bio-green);
-}
-
-.survival-pill.danger .tag {
-  background: var(--crit-crimson);
-  color: #fff;
-}
-
-/* ECG Live Canvas */
-.ecg-container {
-  position: relative;
-  background: #04070b;
-  border: 1px solid rgba(0, 243, 255, 0.2);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  height: 110px;
-}
-
-#ecgCanvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.ecg-overlay-stats {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--hud-cyan);
-  background: rgba(0, 0, 0, 0.6);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-/* RIDGE Pillars Matrix (Center Column) */
-.ridge-matrix {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .ridge-matrix {
-    grid-template-columns: 1fr;
-  }
-}
-
-.pillar-card {
-  background: rgba(11, 18, 30, 0.7);
-  border: 1px solid rgba(0, 243, 255, 0.15);
-  border-radius: var(--radius-hud);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-  transition: var(--transition-fast);
-}
-
-.pillar-card:hover {
-  border-color: rgba(0, 243, 255, 0.4);
-  background: rgba(14, 24, 40, 0.85);
-}
-
-.pillar-card.full-width {
-  grid-column: span 2;
-}
-
-@media (max-width: 900px) {
-  .pillar-card.full-width {
-    grid-column: span 1;
-  }
-}
-
-.pillar-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 8px;
-}
-
-.pillar-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.pillar-letter {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  background: rgba(0, 243, 255, 0.15);
-  border: 1px solid var(--hud-cyan);
-  border-radius: 4px;
-  color: var(--hud-cyan);
-  font-size: 0.8rem;
-}
-
-.pillar-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-}
-
-.metric-cell {
-  background: rgba(4, 8, 14, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  transition: var(--transition-fast);
-}
-
-.metric-cell:hover {
-  border-color: rgba(0, 243, 255, 0.3);
-}
-
-.metric-cell.critical-breach {
-  border-color: var(--crit-crimson);
-  background: rgba(255, 0, 85, 0.12);
-  animation: pulse-danger-box 1.2s infinite;
-}
-
-.metric-cell.warning-breach {
-  border-color: var(--warn-amber);
-  background: rgba(255, 183, 3, 0.12);
-}
-
-.metric-name {
-  font-family: var(--font-tech);
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.metric-value-row {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.metric-value {
-  font-family: var(--font-mono);
-  font-size: 1.28rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.metric-unit {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.metric-threshold-tag {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-/* Progress bar for dose/limits */
-.progress-bar-wrap {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  margin-top: 6px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: var(--bio-green);
-  border-radius: 3px;
-  transition: width 0.4s ease, background 0.4s ease;
-}
-
-.progress-bar-fill.warn {
-  background: var(--warn-amber);
-}
-
-.progress-bar-fill.crit {
-  background: var(--crit-crimson);
-}
-
-/* Flight Surgeon AI Directives Column (Right Column) */
-.directives-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 480px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.directive-card {
-  background: rgba(14, 21, 33, 0.85);
-  border-radius: var(--radius-sm);
-  border-left: 4px solid var(--bio-green);
-  padding: 14px;
-  position: relative;
-  transition: var(--transition-fast);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.directive-card.CRITICAL {
-  border-left-color: var(--crit-crimson);
-  background: rgba(30, 8, 16, 0.85);
-  border: 1px solid rgba(255, 0, 85, 0.3);
-  border-left-width: 4px;
-  border-left-color: var(--crit-crimson);
-}
-
-.directive-card.WARNING {
-  border-left-color: var(--warn-amber);
-  background: rgba(28, 20, 8, 0.85);
-  border: 1px solid rgba(255, 183, 3, 0.3);
-  border-left-width: 4px;
-  border-left-color: var(--warn-amber);
-}
-
-.directive-card.NOMINAL {
-  border-left-color: var(--bio-green);
-}
-
-.directive-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.directive-status-tag {
-  font-family: var(--font-display);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.directive-card.CRITICAL .directive-status-tag {
-  background: var(--crit-crimson);
-  color: #fff;
-  box-shadow: var(--crit-crimson-glow);
-}
-
-.directive-card.WARNING .directive-status-tag {
-  background: var(--warn-amber);
-  color: #000;
-}
-
-.directive-card.NOMINAL .directive-status-tag {
-  background: rgba(0, 255, 157, 0.2);
-  color: var(--bio-green);
-}
-
-.directive-time {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-muted);
-}
-
-.directive-diagnosis {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.directive-trigger {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--hud-cyan);
-  margin-bottom: 8px;
-}
-
-.directive-action-box {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-family: var(--font-tech);
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: #e0ecf7;
-}
-
-.directive-action-label {
-  font-family: var(--font-display);
-  font-size: 0.72rem;
-  letter-spacing: 1px;
-  color: var(--warn-amber);
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-
-.directive-astronaut-guide {
-  margin-top: 8px;
-  padding: 7px 10px;
-  border-radius: 4px;
-  background: rgba(0, 255, 157, 0.08);
-  border: 1px solid rgba(0, 255, 157, 0.28);
-  font-family: var(--font-tech);
-  font-size: 0.75rem;
-  color: #dcfff0;
-  line-height: 1.4;
-}
-
-.directive-astronaut-guide strong {
-  color: var(--bio-green);
-}
-
-.directive-osdr-ref {
-  margin-top: 8px;
-  padding: 5px 8px;
-  border-radius: 4px;
-  background: rgba(0, 243, 255, 0.08);
-  border: 1px solid rgba(0, 243, 255, 0.25);
-  font-family: var(--font-mono);
-  font-size: 0.67rem;
-  color: var(--hud-cyan);
-  line-height: 1.35;
-}
-
-/* NASA OSDR Scientific Evidence Panel */
-.osdr-summary-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.osdr-study-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.osdr-study-card {
-  background: rgba(4, 9, 16, 0.72);
-  border: 1px solid rgba(0, 243, 255, 0.16);
-  border-left: 3px solid var(--hud-cyan);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-}
-
-.osdr-study-card.active-link {
-  border-color: var(--warn-amber);
-  border-left-color: var(--warn-amber);
-  background: rgba(34, 24, 6, 0.78);
-}
-
-.osdr-study-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.osdr-accession-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--hud-cyan);
-}
-
-.osdr-study-card.active-link .osdr-accession-tag {
-  color: var(--warn-amber);
-}
-
-.osdr-assay-tag {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: var(--text-muted);
-}
-
-.osdr-study-title {
-  font-family: var(--font-tech);
-  font-size: 0.75rem;
-  color: var(--text-primary);
-  line-height: 1.35;
-  margin-bottom: 4px;
-}
-
-.osdr-study-meta {
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  color: var(--text-secondary);
-}
-
-/* Simulation Controls / Test Flight Panel */
-.sim-controls-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.sim-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-primary);
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-align: center;
-  transition: var(--transition-fast);
-}
-
-.sim-btn:hover {
-  background: rgba(0, 243, 255, 0.15);
-  border-color: var(--hud-cyan);
-  color: #fff;
-}
-
-.sim-btn.danger-btn {
-  background: rgba(255, 0, 85, 0.1);
-  border-color: rgba(255, 0, 85, 0.3);
-}
-
-.sim-btn.danger-btn:hover {
-  background: var(--crit-crimson);
-  color: #fff;
-  box-shadow: var(--crit-crimson-glow);
-}
-
-.sim-btn.reset-btn {
-  grid-column: span 2;
-  background: rgba(0, 255, 157, 0.1);
-  border-color: rgba(0, 255, 157, 0.3);
-  color: var(--bio-green);
-}
-
-.sim-btn.reset-btn:hover {
-  background: var(--bio-green);
-  color: #000;
-  box-shadow: var(--bio-green-glow);
-}
-
-/* Raw Telemetry Inspector */
-.raw-json-viewer {
-  background: #04070a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: #92b0c9;
-  max-height: 180px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-/* SOMA Forensic Card Details */
-.soma-details-card {
-  display: none;
-  background: rgba(20, 5, 12, 0.9);
-  border: 1px solid var(--crit-crimson);
-  border-radius: var(--radius-hud);
-  padding: 16px;
-  margin-top: 8px;
-}
-
-.soma-details-card.visible {
-  display: block;
-  animation: alert-slide-down 0.3s ease-out;
-}
-
-.soma-kv-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-}
-
-.soma-kv-item {
-  background: rgba(0, 0, 0, 0.5);
-  padding: 6px 8px;
-  border-radius: 4px;
-}
-
-.soma-k {
-  color: var(--text-muted);
-  font-size: 0.65rem;
-}
-
-.soma-v {
-  color: #fff;
-  font-weight: 600;
-}
-
-/* Animations */
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-@keyframes pulse-beacon {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(1.3); }
-}
-
-@keyframes flash-border {
-  from { border-color: rgba(255, 0, 85, 0.3); }
-  to { border-color: var(--crit-crimson); }
-}
-
-@keyframes alert-slide-down {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-danger-box {
-  0%, 100% { box-shadow: 0 0 0 rgba(255, 0, 85, 0); }
-  50% { box-shadow: 0 0 16px rgba(255, 0, 85, 0.4); }
-}
-
-/* Edema facial vs día 1 */
-.edema-note,
-.edema-status {
-  font-size: 0.74rem;
-  line-height: 1.4;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-}
-
-.edema-stage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  background: #04070a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
-.edema-stage video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-
-.edema-idle {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  letter-spacing: 1px;
-  color: var(--text-muted);
-  background: rgba(4, 7, 10, 0.72);
-}
-
-.edema-idle[hidden] {
-  display: none;
-}
-
-.edema-delta {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  line-height: 1;
-  color: var(--text-primary);
-}
-
-.edema-delta.nominal { color: var(--bio-green); }
-.edema-delta.warn { color: var(--warn-amber); }
-.edema-delta.crit { color: var(--crit-crimson); }
-
-.edema-delta-label {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  margin: 4px 0 10px;
-}
-
-.edema-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.edema-metrics div {
-  background: rgba(0, 0, 0, 0.28);
-  border-radius: var(--radius-sm);
-  padding: 6px 8px;
-}
-
-.edema-metrics span {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: var(--text-muted);
-  letter-spacing: 0.4px;
-}
-
-.edema-metrics strong {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  color: var(--hud-cyan);
-}
-
-.edema-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.edema-chart {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 3px;
-  height: 52px;
-  margin-bottom: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.edema-chart[hidden] {
-  display: none;
-}
-
-.edema-bar {
-  width: 7px;
-  border-radius: 2px;
-  background: var(--bio-green);
-  align-self: flex-end;
-  margin-bottom: 26px;
-}
-
-.edema-bar.warn { background: var(--warn-amber); }
-.edema-bar.crit { background: var(--crit-crimson); }
-
-.edema-bar.down {
-  align-self: flex-start;
-  margin-bottom: 0;
-  margin-top: 26px;
-}
-
-.edema-history {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.edema-history-row {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  color: var(--text-secondary);
-}
-
-.edema-history-row strong.nominal { color: var(--bio-green); }
-.edema-history-row strong.warn { color: var(--warn-amber); }
-.edema-history-row strong.crit { color: var(--crit-crimson); }
-
-.edema-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.edema-actions .edema-reset {
-  grid-column: span 2;
-}
-
-.edema-actions .sim-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Header Environment Selector */
-.hud-select {
-  background: rgba(8, 16, 28, 0.9);
-  border: 1px solid var(--surface-glass-border);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  outline: none;
-  max-width: 245px;
-}
-
-.hud-select:hover,
-.hud-select:focus {
-  border-color: var(--hud-cyan);
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.25);
-}
-
-/* Countermeasure Routine & Gamification */
-.routine-progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-
-.routine-progress-header strong {
-  color: var(--hud-cyan);
-  font-size: 0.85rem;
-}
-
-.routine-checklist {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.routine-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: rgba(4, 9, 16, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-}
-
-.routine-item.completed {
-  border-color: rgba(0, 255, 157, 0.4);
-  background: rgba(0, 255, 157, 0.08);
-  color: var(--bio-green);
-}
-
-.routine-mini-btn {
-  background: rgba(0, 243, 255, 0.12);
-  border: 1px solid rgba(0, 243, 255, 0.35);
-  color: var(--hud-cyan);
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.routine-mini-btn:hover {
-  background: var(--hud-cyan);
-  color: #000;
-}
-
-.routine-item.completed .routine-mini-btn {
-  border-color: rgba(0, 255, 157, 0.5);
-  color: var(--bio-green);
-  background: rgba(0, 255, 157, 0.14);
-}
-
-/* Interactive Clickable Human Body Map HUD */
-.body-map-layout {
-  display: grid;
-  grid-template-columns: 230px 1fr;
-  gap: 16px;
+  grid-template-columns: 232px minmax(0, 1fr) 296px;
+  gap: var(--gap);
   align-items: stretch;
 }
+.col-izq, .col-der { display: flex; flex-direction: column; gap: var(--gap); }
+.col-centro { display: flex; }
+.alto-total { flex: 1; width: 100%; }
+.banda { grid-column: 1 / -1; }
 
-@media (max-width: 960px) {
-  .body-map-layout {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 1280px) {
+  .principal { grid-template-columns: 260px minmax(0, 1fr); }
+  .col-der { grid-column: 1 / -1; flex-direction: row; }
+  .col-der > * { flex: 1; }
+}
+@media (max-width: 920px) {
+  .principal { grid-template-columns: 1fr; }
+  .col-der { flex-direction: column; }
 }
 
-.body-svg-stage {
-  background: radial-gradient(circle at 50% 45%, rgba(0, 243, 255, 0.08), rgba(4, 8, 14, 0.85));
-  border: 1px solid rgba(0, 243, 255, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+/* ===== Puntaje de salud ==================================================
+   El anillo es el unico elemento grande de la columna: es lo primero que
+   se mira. Si no hay dato, queda gris y el numero en "--". Nunca 100.
+   ======================================================================== */
+.puntaje { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+.anillo { position: relative; width: 106px; height: 106px; }
+.anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anillo circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+.anillo-base  { stroke: var(--fondo-2); }
+.anillo-valor {
+  stroke: var(--sin-dato);
+  stroke-dasharray: 327;            /* 2 * PI * 52 */
+  stroke-dashoffset: 327;
+  transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), stroke .3s;
 }
 
-#astronautBodySvg {
-  width: 100%;
-  max-width: 210px;
-  height: auto;
-  display: block;
+.anillo-centro {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px;
+}
+.anillo-centro b {
+  font-family: var(--mono); font-size: 1.85rem; font-weight: 600;
+  line-height: 1; font-variant-numeric: tabular-nums; color: var(--sin-dato);
+}
+.anillo-centro span { font-size: .68rem; color: var(--tinta-3); }
+
+.puntaje-lbl {
+  margin: 0; font-size: .74rem; font-weight: 560;
+  letter-spacing: .04em; color: var(--tinta-2); text-transform: uppercase;
 }
 
-.body-zone {
-  cursor: pointer;
-  outline: none;
-  transition: var(--transition-fast);
+/* ===== Signos vitales ====================================================
+   Lo que se tiene que leer mas limpio de toda la pantalla. Una tarjeta por
+   signo: icono, nombre, numero grande en mono, unidad chica y el rango de
+   referencia debajo. El color SOLO aparece si el valor se sale del rango.
+   ======================================================================== */
+.vitales { display: flex; flex-direction: column; gap: 7px; }
+
+.vital {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--blanco); border-radius: var(--r);
+  box-shadow: var(--sombra); padding: 8px 11px;
+  border-left: 3px solid transparent;
+  transition: border-color .2s, background .2s;
 }
 
-.body-zone .zone-shape {
-  fill: rgba(0, 243, 255, 0.12);
-  stroke: var(--hud-cyan);
-  stroke-width: 1.6;
-  transition: var(--transition-fast);
+.vital-icono {
+  flex: 0 0 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--fondo-2); color: var(--tinta-3);
+}
+.vital-icono svg { width: 16px; height: 16px; fill: none; stroke: currentColor;
+                   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.vital-cuerpo { min-width: 0; flex: 1; }
+.vital-nombre { font-size: .72rem; color: var(--tinta-2); }
+.vital-fila   { display: flex; align-items: baseline; gap: 4px; }
+.vital-num    {
+  font-family: var(--mono); font-size: 1.22rem; font-weight: 600;
+  line-height: 1.15; font-variant-numeric: tabular-nums;
+}
+.vital-unidad { font-size: .72rem; color: var(--tinta-3); }
+.vital-rango  { font-size: .66rem; color: var(--tinta-3); }
+
+/* --- Los tres estados ---
+   Nominal  sin clase, la tarjeta queda neutra
+   Alerta   ambar
+   Critico  rojo
+   Sin dato gris: NO sabemos. No es verde ni rojo, es ausencia de dato.     */
+.vital.alerta  { border-left-color: var(--alerta);  background: var(--alerta-suave); }
+.vital.alerta  .vital-icono { background: #fff; color: var(--alerta); }
+.vital.alerta  .vital-num   { color: var(--alerta); }
+
+.vital.critico { border-left-color: var(--critico); background: var(--critico-suave); }
+.vital.critico .vital-icono { background: #fff; color: var(--critico); }
+.vital.critico .vital-num   { color: var(--critico); }
+
+.vital.sin-dato { background: var(--sin-dato-suave); box-shadow: none; }
+.vital.sin-dato .vital-num,
+.vital.sin-dato .vital-nombre,
+.vital.sin-dato .vital-unidad,
+.vital.sin-dato .vital-rango { color: var(--sin-dato); }
+
+/* Nivel de evidencia: discreto, arriba a la derecha de la tarjeta */
+.vital { position: relative; }
+.ev {
+  position: absolute; top: 9px; right: 10px;
+  font-family: var(--mono); font-size: .55rem; font-weight: 700;
+  letter-spacing: .06em; padding: 1px 4px; border-radius: 3px;
+  border: 1px solid currentColor; opacity: .7; cursor: help;
+}
+.ev-n1 { color: var(--acento); }
+.ev-n2 { color: var(--ok); }
+.ev-n3 { color: var(--alerta); }
+.ev-n4 { color: #c2410c; border-style: dashed; }
+.ev-sf { color: var(--sin-dato); border-style: dashed; }
+
+/* ===== Botones =========================================================== */
+.btn {
+  font: inherit; font-size: .8rem; font-weight: 560;
+  padding: 9px 15px; border-radius: var(--r-chico); cursor: pointer;
+  background: var(--tinta); color: #fff; border: 1px solid var(--tinta);
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .88; }
+.btn:disabled { opacity: .4; cursor: default; }
+
+.btn-sec { background: var(--blanco); color: var(--tinta); border-color: var(--linea); }
+.btn-sec:hover { background: var(--fondo-2); opacity: 1; }
+
+/* ===== Andamio temporal (se borra parte por parte) ======================= */
+.placeholder {
+  display: grid; place-items: center; min-height: 70px;
+  border: 1px dashed var(--linea); border-radius: var(--r-chico);
+  color: var(--tinta-3); font-size: .78rem; letter-spacing: .02em;
+  background: var(--fondo-2);
+}
+.placeholder.alto { min-height: 260px; }
+.vitales .placeholder { grid-column: 1 / -1; }
+
+/* ===== Panel de cámara ===================================================
+   Tres pestañas sobre el display. Cada una muestra SUS métricas: no se
+   apilan quince números que nadie mira. La medición vive en camara.js.
+   ======================================================================== */
+
+.pestanas {
+  display: flex; gap: 4px; padding: 3px;
+  background: var(--fondo-2); border-radius: var(--r-chico);
+  margin-bottom: 12px;
+}
+.pestana {
+  flex: 1; font: inherit; font-size: .74rem; font-weight: 560;
+  padding: 7px 6px; border: 0; border-radius: 7px; cursor: pointer;
+  background: transparent; color: var(--tinta-2);
+  transition: background .15s, color .15s;
+}
+.pestana:hover  { color: var(--tinta); }
+.pestana.activa { background: var(--blanco); color: var(--tinta); box-shadow: 0 1px 2px rgba(22,41,61,.08); }
+
+.tab-panel { display: none; }
+.tab-panel.activo { display: block; }
+
+/* --- Display --- */
+.cam {
+  position: relative; aspect-ratio: 16/9; overflow: hidden;
+  border-radius: var(--r-chico); background: #0d141c; margin-bottom: 10px;
+}
+/* espejado: la persona se ve como en un espejo, no invertida */
+.cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+.cam video { object-fit: cover; }
+
+.cam-off {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 7px;
+  color: #5b7389; font-size: .74rem;
+}
+/* `display:flex` le gana al atributo [hidden], así que hay que decirlo. */
+.cam-off[hidden] { display: none; }
+
+.cam-off svg { width: 26px; height: 26px; fill: none; stroke: currentColor;
+               stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.cam-btns { display: flex; gap: 6px; flex-wrap: nowrap; margin-bottom: 9px; }
+.cam-btns .btn { flex: 1 1 0; min-width: 0; font-size: .72rem; padding: 8px 6px;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Estado del ojo --- */
+.estado-ojo {
+  display: inline-block; padding: 4px 11px; border-radius: 999px;
+  font-size: .72rem; font-weight: 600; margin-bottom: 10px;
+}
+.estado-ojo.abierto  { color: var(--ok);       background: var(--ok-suave); }
+.estado-ojo.cerrado  { color: var(--critico);  background: var(--critico-suave); }
+.estado-ojo.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
+
+/* --- Lista de métricas --- */
+.cam-lista { display: flex; flex-direction: column; }
+.cam-fila {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 4px 0; border-bottom: 1px solid var(--linea); font-size: .76rem;
+}
+.cam-fila:last-child { border-bottom: 0; }
+.cam-fila span { color: var(--tinta-2); }
+.cam-fila b { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* --- Destacados del panel de cansancio --- */
+.cam-destacados { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px; }
+.destacado {
+  padding: 11px 12px; border-radius: var(--r-chico);
+  background: var(--fondo-2); text-align: center;
+}
+.destacado b {
+  display: block; font-family: var(--mono); font-size: 1.32rem; font-weight: 600;
+  line-height: 1.2; font-variant-numeric: tabular-nums;
+}
+.destacado span   { display: block; font-size: .7rem; color: var(--tinta-2); }
+.destacado small  { display: block; font-size: .62rem; color: var(--tinta-3); margin-top: 2px; }
+.destacado.alerta  { background: var(--alerta-suave); }
+.destacado.alerta  b { color: var(--alerta); }
+.destacado.critico { background: var(--critico-suave); }
+.destacado.critico b { color: var(--critico); }
+
+/* --- Curva de apertura --- */
+.curva {
+  width: 100%; height: 64px; display: block; margin-top: 10px;
+  background: var(--fondo-2); border-radius: var(--r-chico);
 }
 
-.body-zone .zone-detail {
-  fill: none;
-  stroke: rgba(0, 243, 255, 0.6);
-  stroke-width: 1.2;
+/* --- Textos de pie --- */
+.nota { margin: 6px 0 0; font-size: .64rem; line-height: 1.45; color: var(--tinta-2); }
+.nota b { color: var(--tinta); }
+.nota code { font-family: var(--mono); font-size: .64rem; background: var(--fondo-2); padding: 1px 4px; border-radius: 4px; }
+
+.aviso-privacidad {
+  margin: 12px 0 0; padding: 9px 11px;
+  background: var(--acento-suave); border-radius: var(--r-chico);
+  font-size: .68rem; line-height: 1.45; color: #1e4bb8;
 }
 
-.body-zone .zone-node {
-  fill: var(--bio-green);
-  filter: url(#hudGlow);
+.log { margin: 5px 0 0; font-family: var(--mono); font-size: .66rem; color: var(--tinta-3); }
+
+/* ===== Mapa del tripulante ===============================================
+   La silueta es un placeholder: se reemplaza por el render sin tocar nada
+   más, porque los puntos se posicionan en % sobre el contenedor.
+   ======================================================================== */
+.cuerpo { display: flex; flex-direction: column; min-height: 0; }
+.col-centro > .tarjeta { width: 100%; }
+
+.figura {
+  position: relative;
+  flex: 1;
+  min-height: clamp(220px, 32vh, 360px);
+  display: grid; place-items: center;
+  border-radius: var(--r-chico);
+  background:
+    radial-gradient(460px 340px at 50% 40%, #ffffff, transparent 72%),
+    var(--fondo-2);
+  overflow: hidden;
+}
+/* El render se ajusta al contenedor sin desbordarlo, sea SVG, imagen o
+   canvas. El viewBox del SVG hace el resto. */
+.figura img, .figura canvas, .figura .silueta {
+  position: absolute; inset: 10px;
+  width: calc(100% - 20px); height: calc(100% - 20px);
+  object-fit: contain; display: block;
 }
 
-.body-zone .zone-label {
-  fill: rgba(230, 241, 255, 0.72);
-  font-family: var(--font-mono);
-  font-size: 7.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
+/* --- Puntos sobre el cuerpo --- */
+.puntos { position: absolute; inset: 0; }
+
+.punto-zona {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid currentColor;
+  background: color-mix(in srgb, currentColor 28%, transparent);
+  cursor: pointer; padding: 0;
+  transition: transform .15s;
+}
+.punto-zona:hover,
+.punto-zona.activo { transform: translate(-50%, -50%) scale(1.3); }
+
+.punto-zona.ok       { color: var(--ok); }
+.punto-zona.alerta   { color: var(--alerta); }
+.punto-zona.critico  { color: var(--critico); animation: latir 1.4s infinite; }
+.punto-zona.sin-dato { color: var(--sin-dato); }
+
+@keyframes latir {
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, currentColor 18%, transparent); }
 }
 
-.body-zone:hover .zone-shape,
-.body-zone.active-zone .zone-shape {
-  fill: rgba(0, 243, 255, 0.28);
-  stroke-width: 2.4;
+/* --- Detalle de la zona --- */
+.detalle {
+  margin-top: 12px; padding: 13px 14px;
+  border: 1px solid var(--linea); border-radius: var(--r-chico);
+  background: var(--fondo-2);
 }
-
-.body-zone.warning .zone-shape {
-  fill: rgba(255, 183, 3, 0.2);
-  stroke: var(--warn-amber);
+.detalle.oculto { display: none; }
+.detalle-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.detalle-cab b { font-size: .8rem; }
+.detalle-cerrar {
+  background: none; border: 0; color: var(--tinta-3);
+  font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 0 2px;
 }
-
-.body-zone.warning .zone-detail {
-  stroke: var(--warn-amber);
+.detalle-cerrar:hover { color: var(--tinta); }
+.detalle-valor { display: flex; align-items: baseline; gap: 5px; margin-top: 3px; }
+.detalle-valor span {
+  font-family: var(--mono); font-size: 1.5rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
+.detalle-valor small { font-size: .72rem; color: var(--tinta-3); }
+.detalle-fuente { margin: 5px 0 0; font-size: .67rem; color: var(--tinta-3); line-height: 1.45; }
 
-.body-zone.warning .zone-node {
-  fill: var(--warn-amber);
+.figura-nota { margin: 6px 0 0; font-size: .67rem; color: var(--tinta-3); text-align: center; }
+
+/* --- Estado de la cámara: visible siempre, encendida o apagada --------- */
+.cam-estado {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .68rem; font-weight: 560;
+  padding: 4px 10px; border-radius: 999px;
 }
+.cam-estado .punto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.cam-estado.apagada   { color: var(--sin-dato); background: var(--sin-dato-suave); }
+.cam-estado.encendida { color: var(--ok);       background: var(--ok-suave); }
+.cam-estado.error     { color: var(--critico);  background: var(--critico-suave); }
 
-.body-zone.critical .zone-shape {
-  fill: rgba(255, 0, 85, 0.24);
-  stroke: var(--crit-crimson);
-}
-
-.body-zone.critical .zone-detail {
-  stroke: var(--crit-crimson);
-}
-
-.body-zone.critical .zone-node {
-  fill: var(--crit-crimson);
-}
-
-.body-zone-tabs {
+/* ===== Matriz RIDGE ======================================================
+   Los cinco peligros a la vez. Nada detrás de un clic: en una emergencia
+   nadie va a explorar pestañas.
+   ======================================================================== */
+.pilares {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 5px;
-  width: 100%;
-}
-
-.zone-tab-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(0, 243, 255, 0.2);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  padding: 5px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.zone-tab-btn.active,
-.zone-tab-btn:hover {
-  background: rgba(0, 243, 255, 0.16);
-  border-color: var(--hud-cyan);
-  color: #fff;
-}
-
-.body-inspection-card {
-  background: rgba(5, 10, 18, 0.8);
-  border: 1px solid rgba(0, 243, 255, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 }
+@media (max-width: 1100px) { .pilares { grid-template-columns: repeat(2, 1fr); } }
 
-.body-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.pilar-cab { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; flex-wrap: wrap; }
+.pilar-letra {
+  width: 20px; height: 20px; border-radius: 5px; flex: 0 0 20px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: .68rem;
+  color: var(--acento); background: var(--acento-suave);
+}
+.pilar-titulo { font-size: .76rem; font-weight: 620; }
+
+.pilar-estado {
+  display: flex; align-items: center; gap: 5px;
+  margin-left: auto; font-size: .62rem;
+}
+.pilar-estado .punto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: 0 0 6px; }
+.pilar-estado.ok       { color: var(--ok); }
+.pilar-estado.alerta   { color: var(--alerta); }
+.pilar-estado.critico  { color: var(--critico); }
+.pilar-estado.sin-dato { color: var(--sin-dato); }
+
+/* Una métrica por renglón: nombre a la izquierda, valor a la derecha.
+   Apilar nombre/valor/umbral gastaba el triple de alto para el mismo dato. */
+.celda {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 30px 6px 9px;
+  border-radius: var(--r-chico);
+  background: var(--fondo-2);
+  margin-bottom: 5px;
+}
+.celda:last-child { margin-bottom: 0; }
+
+.celda-nombre {
+  font-size: .64rem; color: var(--tinta-2); line-height: 1.25;
+  flex: 1; min-width: 0;
+}
+.celda-umbral { display: block; font-size: .54rem; color: var(--tinta-3); }
+.celda-fila   { display: flex; align-items: baseline; gap: 3px; flex: 0 0 auto; }
+.celda-valor  {
+  font-family: var(--mono); font-size: .95rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; line-height: 1.25;
+}
+.celda-unidad { font-size: .6rem; color: var(--tinta-3); }
+
+.celda-barra {
+  position: absolute; left: 9px; right: 30px; bottom: 3px;
+  height: 2px; border-radius: 999px; background: #dde5ee; overflow: hidden;
+}
+.celda-barra span { display: block; height: 100%; width: 0%; background: var(--ok); transition: width .4s, background .3s; }
+
+.celda.alerta  { background: var(--alerta-suave); }
+.celda.alerta  .celda-valor { color: var(--alerta); }
+.celda.alerta  .celda-barra span { background: var(--alerta); }
+
+.celda.critico { background: var(--critico-suave); }
+.celda.critico .celda-valor { color: var(--critico); }
+.celda.critico .celda-barra span { background: var(--critico); }
+
+.celda.sin-dato .celda-valor,
+.celda.sin-dato .celda-nombre,
+.celda.sin-dato .celda-unidad,
+.celda.sin-dato .celda-umbral { color: var(--sin-dato); }
+.celda.sin-dato .celda-barra span { background: var(--sin-dato); }
+
+.celda .ev { top: 50%; right: 6px; transform: translateY(-50%); }
+
+/* Destello al llegar desde el riel */
+.resaltado { animation: destello 1.1s ease-out; }
+@keyframes destello {
+  0%   { box-shadow: 0 0 0 0 rgba(47,111,237,.45); }
+  100% { box-shadow: 0 0 0 14px rgba(47,111,237,0); }
 }
 
-.body-card-head h3 {
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  letter-spacing: 1px;
-  color: #fff;
-  text-transform: uppercase;
+/* --- Leyenda de niveles de evidencia --- */
+.leyenda {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 5px 9px; margin-top: 7px;
+  border-radius: var(--r-chico); background: var(--fondo-2);
+  font-size: .64rem; color: var(--tinta-2);
+}
+.leyenda .ev { position: static; margin-right: 5px; }
+.leyenda-item { display: flex; align-items: center; }
+.leyenda-titulo {
+  font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  font-size: .6rem; color: var(--tinta-3);
 }
 
-.body-card-head .directive-status-tag.NOMINAL {
-  background: rgba(0, 255, 157, 0.2);
-  color: var(--bio-green);
+/* ===== Trazado cardíaco ================================================== */
+.ecg-canvas {
+  width: 100%; height: 74px; display: block;
+  border-radius: var(--r-chico); background: var(--fondo-2);
 }
-
-.body-card-head .directive-status-tag.WARNING {
-  background: var(--warn-amber);
-  color: #000;
+.ecg-bpm {
+  font-family: var(--mono); font-size: .78rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--critico);
+  background: var(--critico-suave); padding: 3px 10px; border-radius: 999px;
 }
+.ecg-bpm.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
+.ecg-nota { margin: 9px 0 0; font-size: .66rem; line-height: 1.45; color: var(--tinta-3); }
+.ecg-nota b { color: var(--tinta-2); }
 
-.body-card-head .directive-status-tag.CRITICAL {
-  background: var(--crit-crimson);
-  color: #fff;
-}
-
-.body-card-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.body-card-k {
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  letter-spacing: 1px;
-  color: var(--hud-cyan);
-  font-weight: 700;
-}
-
-.body-card-section p {
-  font-family: var(--font-tech);
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: var(--text-primary);
-}
-
-.zone-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.zone-metric-pill {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-}
-
-.zone-metric-pill strong {
-  display: block;
-  color: #fff;
-  font-size: 0.82rem;
-  margin-top: 2px;
-}
-
-.zone-metric-pill.warn strong { color: var(--warn-amber); }
-.zone-metric-pill.crit strong { color: var(--crit-crimson); }
-
-/* Manual Lab & Self-Report Panel */
-.manual-lab-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.lab-input-row {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.lab-input-row label {
-  font-family: var(--font-mono);
-  font-size: 0.69rem;
-  color: var(--text-secondary);
-}
-
-.lab-control-pair {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.hud-input {
-  background: rgba(4, 9, 16, 0.85);
-  border: 1px solid rgba(0, 243, 255, 0.25);
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  outline: none;
-}
-
-.hud-input:focus {
-  border-color: var(--hud-cyan);
-  box-shadow: 0 0 8px rgba(0, 243, 255, 0.25);
-}
-
-.lab-send-btn {
-  padding: 6px 12px;
-}
-
-.mood-btn-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.mood-btn.active {
-  background: rgba(0, 243, 255, 0.22);
-  border-color: var(--hud-cyan);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 243, 255, 0.2);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--hud-cyan);
+/* --- Nombre de la app, vertical sobre el borde izquierdo --------------- */
+.riel-nombre {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);          /* se lee de abajo hacia arriba */
+  font-size: .66rem; font-weight: 700;
+  letter-spacing: .38em;
+  color: var(--tinta-3);
+  margin-bottom: 16px;
+  user-select: none;
 }

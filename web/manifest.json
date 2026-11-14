@@ -1,0 +1,17 @@
+{
+  "name": "Z.E.U.S · Monitoreo autónomo de salud",
+  "short_name": "Z.E.U.S",
+  "description": "Cockpit de telemetría biomédica para tránsito a Marte. Operación médica sin apoyo de la Tierra.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#eaeff5",
+  "theme_color": "#16293d",
+  "icons": [
+    { "src": "iconos/zeus-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/zeus-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/zeus-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

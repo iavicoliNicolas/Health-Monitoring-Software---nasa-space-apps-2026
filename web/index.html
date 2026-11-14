@@ -1,717 +1,233 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VitalGrid | Monitoreo de Salud de Astronautas en Espacio Profundo e IA Médico de Vuelo</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z.E.U.S · Telemetría</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16293d">
+<link rel="icon" type="image/png" sizes="192x192" href="iconos/zeus-192.png">
+<link rel="apple-touch-icon" href="iconos/zeus-192.png">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <!-- Encabezado Aeroespacial del Cockpit -->
-    <header class="cockpit-header">
-        <div class="brand-section">
-            <span class="nasa-logo-badge">NASA</span>
-            <div class="brand-text">
-                <h1 class="project-title">Vital<span>Grid</span></h1>
-                <span class="mission-tag" id="missionEnvTag">TRÁNSITO DE ESPACIO PROFUNDO :: ARTEMIS V / MARS CYCLER</span>
-            </div>
-        </div>
+<div class="app">
 
-        <div class="mission-clock-section">
-            <div class="clock-box">
-                <span class="clock-label">TIEMPO TRANSCURRIDO DE MISIÓN</span>
-                <span class="clock-val" id="metClock">MET +042:18:24:12</span>
-            </div>
-            <div class="clock-box">
-                <span class="clock-label">TELEMETRÍA DE LA NAVE</span>
-                <span class="clock-val" id="utcClock">2026-11-14 UTC</span>
-            </div>
-        </div>
+  <!-- ===== Riel lateral =============================================== -->
+  <nav class="riel">
+    <div class="riel-marca" title="Z.E.U.S">Z</div>
 
-        <div class="header-status-pills">
-            <select id="habitatEnvSelector" class="hud-select" title="Entorno operativo espacial">
-                <option value="transit">🚀 Nave en Tránsito - Espacio Profundo</option>
-                <option value="gateway">🛰️ Estación Orbital / Gateway</option>
-                <option value="rover">🛞 Rover Presurizado</option>
-                <option value="base">⛺ Base Planetaria Marte/Luna</option>
-            </select>
+    <button class="riel-btn activo" data-ir="inicio" title="Telemetría">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+    </button>
+    <button class="riel-btn" data-ir="panelCamara" title="Cámara">
+      <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+    </button>
+    <button class="riel-btn" data-ir="panelAnalisis" title="Análisis">
+      <svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+    </button>
 
-            <div id="connectionPill" class="status-pill disconnected">
-                <span class="status-dot"></span>
-                <span id="connectionLabel">CONECTANDO...</span>
-            </div>
+    <div class="riel-sep"></div>
 
-            <div id="somaPill" class="status-pill soma-standby">
-                <span class="status-dot"></span>
-                <span id="somaLabel">WATCHDOG SOMA: ARMADO</span>
-            </div>
+    <!-- Nombre de la app en el borde, leído de abajo hacia arriba -->
+    <div class="riel-nombre">Z.E.U.S</div>
 
-            <button id="muteBtn" class="btn-icon-hud" title="Alternar audio aeroespacial">SILENCIAR AUDIO</button>
-        </div>
+    <div class="riel-crew" title="Cmdte. Marcus Vance">Z</div>
+  </nav>
+
+  <!-- ===== Hoja ======================================================= -->
+  <div class="hoja">
+
+    <header class="cabecera">
+      <div>
+        <h1>Z.E.U.S</h1>
+      </div>
+      <div class="cabecera-der">
+        <span class="met" id="reloj">MET +000:00:00:00</span>
+        <span class="conexion desconectado" id="pastillaConexion">
+          <span class="punto"></span><span id="etiquetaConexion">Sin conexión</span>
+        </span>
+      </div>
     </header>
 
-    <!-- Franja de Emergencia SOMA Ciencia sobre Supervivencia (Se activa automáticamente) -->
-    <div id="somaStrip" class="soma-emergency-strip">
-        <div class="soma-strip-content">
-            <div class="soma-title-box">
-                <div class="soma-pulse-beacon"></div>
-                <div>
-                    <div class="soma-banner-h1">EVENTO CRÍTICO DE ARCHIVO SOMA INICIADO :: CIENCIA SOBRE SUPERVIVENCIA</div>
-                    <div class="soma-banner-desc" id="somaReasonText">COLAPSO DE SIGNOS VITALES DEL ASTRONAUTA / ASISTOLIA DETECTADA</div>
-                </div>
-            </div>
+    <div class="principal">
 
-            <div class="dsoc-laser-link-box">
-                <span class="dsoc-badge">LÁSER DSOC 1550nm ACTIVO</span>
-                <span id="somaDsocStation">NASA DSN Goldstone - Guía de Ondas de 34m</span>
-                <span id="somaDelayText" style="color: var(--warn-amber);">20.5 min retardo lumínico</span>
+      <!-- ===== COLUMNA IZQUIERDA ===================================== -->
+      <div class="col-izq">
+
+        <!-- Puntaje de salud -->
+        <section class="tarjeta puntaje">
+          <div class="anillo">
+            <svg viewBox="0 0 120 120">
+              <circle class="anillo-base" cx="60" cy="60" r="52"/>
+              <circle class="anillo-valor" id="anilloValor" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="anillo-centro">
+              <b id="puntajeNum">--</b>
+              <span id="puntajeEstado">sin medición</span>
             </div>
+          </div>
+          <p class="puntaje-lbl">Puntaje de salud</p>
+        </section>
+
+        <!-- Signos vitales -->
+        <section class="vitales" id="vitales"></section>
+
+        <!-- Panel de simulación -->
+        <section class="tarjeta">
+          <div class="placeholder">Parte 6 · Panel de simulación</div>
+        </section>
+
+      </div>
+
+      <!-- ===== COLUMNA CENTRAL ======================================= -->
+      <div class="col-centro">
+        <section class="tarjeta alto-total cuerpo">
+          <div class="tarjeta-cab">
+            <h2>Mapa del tripulante</h2>
+            <span class="pista">Tocá un punto para ver la métrica</span>
+          </div>
+
+          <!-- ACÁ VA EL RENDER DE TU COMPAÑERA: reemplazá este <svg> por
+               <img src="assets/cuerpo.png" alt=""> o <canvas id="lienzoRender">.
+               Los puntos se posicionan en % sobre el contenedor, así que
+               siguen funcionando con cualquier render del mismo encuadre. -->
+          <div class="figura" id="figura">
+            <img class="silueta" src="assets/cuerpo.png" alt="Mapa anatómico del tripulante">
+
+            <div class="puntos" id="puntos"></div>
+          </div>
+
+          <!-- Detalle de la zona tocada -->
+          <div class="detalle oculto" id="detalle">
+            <div class="detalle-cab">
+              <b id="detalleNombre">—</b>
+              <button class="detalle-cerrar" id="detalleCerrar" aria-label="Cerrar">×</button>
+            </div>
+            <div class="detalle-valor"><span id="detalleValor">—</span><small id="detalleUnidad"></small></div>
+            <p class="detalle-fuente" id="detalleFuente"></p>
+          </div>
+
+          <p class="figura-nota">Los puntos cambian de color con el estado de su métrica. Gris = sin medición.</p>
+        </section>
+      </div>
+
+      <!-- ===== COLUMNA DERECHA ======================================= -->
+      <div class="col-der">
+
+        <!-- ===== CÁMARA · MediaPipe ================================ -->
+        <section class="tarjeta camara" id="panelCamara">
+          <div class="tarjeta-cab">
+            <h2>Cámara</h2>
+            <span class="cam-estado apagada" id="camEstado">
+              <span class="punto"></span>Cámara apagada
+            </span>
+          </div>
+
+          <!-- Tres pestañas: cada una con sus propias métricas -->
+          <div class="pestanas" role="tablist">
+            <button class="pestana activa" data-tab="parpados" role="tab">Párpados</button>
+            <button class="pestana"        data-tab="cansancio" role="tab">Cansancio</button>
+            <button class="pestana"        data-tab="edema"     role="tab">Edema facial</button>
+          </div>
+
+          <!-- Display de la cámara -->
+          <div class="cam">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="cam-off" id="camOff">
+              <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+              <span>Cámara apagada</span>
+            </div>
+          </div>
+
+          <div class="cam-btns">
+            <button class="btn" id="btnEncender">Encender</button>
+            <button class="btn btn-sec" id="btnCalibrar" disabled>Calibrar</button>
+            <button class="btn btn-sec" id="btnReiniciar" disabled>Reiniciar</button>
+          </div>
+
+          <!-- ===== Panel: PÁRPADOS ===== -->
+          <div class="tab-panel activo" data-panel="parpados">
+            <div class="estado-ojo sin-dato" id="estadoOjo">Sin medir</div>
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Apertura (EAR)</span><b id="vEar">—</b></div>
+              <div class="cam-fila"><span>Umbral de cierre</span><b id="vUmbral">0.120</b></div>
+              <div class="cam-fila"><span>Parpadeos / min</span><b id="vParpadeos">—</b></div>
+              <div class="cam-fila"><span>Último cierre</span><b id="vDuracion">—</b></div>
+            </div>
+            <canvas id="curva" class="curva"></canvas>
+          </div>
+
+          <!-- ===== Panel: CANSANCIO ===== -->
+          <div class="tab-panel" data-panel="cansancio">
+            <div class="cam-destacados">
+              <div class="destacado" id="dPerclos">
+                <b>—</b><span>PERCLOS</span><small>% de tiempo con el ojo cerrado</small>
+              </div>
+              <div class="destacado" id="dMicro">
+                <b>—</b><span>Microsueños</span><small>cierres ≥ 500 ms</small>
+              </div>
+            </div>
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Cuadros por segundo</span><b id="vFps">—</b></div>
+              <div class="cam-fila"><span>Ventana de análisis</span><b>60 s</b></div>
+            </div>
+            <p class="nota">
+              PERCLOS no es lo mismo que parpadeos por minuto: mide <b>cuánto tiempo</b>
+              estuvo cerrado el ojo, no cuántas veces. Una persona cansada puede parpadear
+              igual, pero cada parpadeo le dura más.
+            </p>
+          </div>
+
+          <!-- ===== Panel: EDEMA FACIAL ===== -->
+          <div class="tab-panel" data-panel="edema">
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Pómulos vs día 1</span><b id="vPomulos">—</b></div>
+              <div class="cam-fila"><span>Mandíbula vs día 1</span><b id="vMandibula">—</b></div>
+              <div class="cam-fila"><span>Ancho / alto</span><b id="vRatio">—</b></div>
+              <div class="cam-fila"><span>Línea base</span><b id="vDia1">sin fijar</b></div>
+            </div>
+            <div class="cam-btns">
+              <button class="btn btn-sec" id="btnFijarDia1" disabled>Fijar día 1</button>
+            </div>
+            <p class="nota">
+              En microgravedad unos 2 litros de fluido se desplazan hacia la cabeza en las
+              primeras 6–10 horas, y la hinchazón periorbital persiste toda la misión.
+              <b>Falta portar <code>facial_edema.js</code> del repo anterior.</b>
+            </p>
+          </div>
+
+          <p class="log" id="camLog">Esperando…</p>
+        </section>
+
+        <!-- ===== Trazado cardíaco ================================== -->
+        <section class="tarjeta ecg">
+          <div class="tarjeta-cab">
+            <h2>Trazado cardíaco</h2>
+            <span class="ecg-bpm sin-dato" id="ecgBpm">— lpm</span>
+          </div>
+          <canvas id="ecgCanvas" class="ecg-canvas"></canvas>
+        </section>
+      </div>
+
+      <!-- ===== BANDA INFERIOR · Matriz RIDGE ========================= -->
+      <section class="tarjeta banda" id="panelAnalisis">
+        <div class="tarjeta-cab">
+          <h2>Análisis — Matriz biomédica NASA RIDGE</h2>
+          <span class="pista">5 peligros del vuelo espacial humano</span>
         </div>
+        <div class="pilares" id="grupos"></div>
+        <div class="leyenda" id="leyenda"></div>
+      </section>
+
     </div>
+  </div>
+</div>
 
-    <!-- Contenedor Principal del Cockpit -->
-    <main class="cockpit-container">
-
-        <!-- COLUMNA IZQUIERDA: Tripulación y Tríada de Supervivencia Inmediata -->
-        <div class="cockpit-col left-col">
-            
-            <!-- Ficha del Tripulante -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <span class="panel-title">TELEMETRÍA DEL ASTRONAUTA</span>
-                    <span class="panel-badge" id="crewId">CMD-01</span>
-                </div>
-
-                <div class="crew-profile-box">
-                    <div class="crew-avatar-hexagon">01</div>
-                    <div class="crew-meta">
-                        <h2>Dr. Marcus Vance</h2>
-                        <p>Comandante de Misión / Ingeniero de Vuelo</p>
-                    </div>
-                </div>
-
-                <!-- Calibrador de Salud en Anillo -->
-                <div class="health-score-container">
-                    <div class="gauge-svg-wrap">
-                        <svg class="gauge-svg" viewBox="0 0 160 160">
-                            <circle class="gauge-track" cx="80" cy="80" r="70"></circle>
-                            <circle id="healthGaugeProgress" class="gauge-progress" cx="80" cy="80" r="70"></circle>
-                        </svg>
-                        <div class="gauge-center-text">
-                            <div class="score-num" id="healthScoreNum">92</div>
-                            <div class="score-sub">NIVEL DE SALUD</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tríada de Supervivencia -->
-                <div class="survival-triad">
-                    <div id="vitalSignsPill" class="survival-pill nominal">
-                        <span>MONITOR DE SIGNOS VITALES</span>
-                        <span class="tag">DETECTADOS (ACTIVO)</span>
-                    </div>
-                    <div id="sosPill" class="survival-pill nominal">
-                        <span>BOTÓN DE PÁNICO SOS TRIPULACIÓN</span>
-                        <span class="tag">ARMADO (EN ESPERA)</span>
-                    </div>
-                    <div id="cabinPressurePill" class="survival-pill nominal">
-                        <span>PRESIÓN ATMOSFÉRICA DE CABINA</span>
-                        <span class="tag">101.3 kPa NOMINAL</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ECG en Vivo / Canvas Cardíaco -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <span class="panel-title">TELEMETRÍA CARDÍACA (DERIVACIÓN II)</span>
-                    <span class="panel-badge" id="ecgBpmDisplay">105 LPM</span>
-                </div>
-                <div class="ecg-container">
-                    <canvas id="ecgCanvas"></canvas>
-                    <div class="ecg-overlay-stats">SENSOR A 1000Hz EN TIEMPO REAL</div>
-                </div>
-            </div>
-
-            <!-- Gamificación de Rutina y Contramedidas Diarias -->
-            <div class="glass-panel" id="routineCard">
-                <div class="panel-header">
-                    <span class="panel-title">RUTINA DE CONTRAMEDIDAS</span>
-                    <span class="panel-badge" id="routineStreakBadge">RACHA: 14 DÍAS</span>
-                </div>
-                <div class="routine-progress-header">
-                    <span id="routineStatusText">Cumplimiento diario de protocolo NASA/CSA</span>
-                    <strong id="routinePctLabel">33%</strong>
-                </div>
-                <div class="progress-bar-wrap" style="height: 8px; margin-bottom: 10px;">
-                    <div id="routineProgressBar" class="progress-bar-fill warn" style="width: 33%;"></div>
-                </div>
-                <div class="routine-checklist">
-                    <div class="routine-item" id="routineAredItem">
-                        <span id="routineAredText">🏋️ Ejercicio ARED: 1.5 / 2.5 h</span>
-                        <button type="button" id="btnAddExercise" class="routine-mini-btn">+0.5h</button>
-                    </div>
-                    <div class="routine-item" id="routineGlucoseItem">
-                        <span id="routineGlucoseText">🩸 Chequeo Glucosa Capilar</span>
-                        <button type="button" id="btnMarkGlucoseCheck" class="routine-mini-btn">MARCAR</button>
-                    </div>
-                    <div class="routine-item" id="routineOcularItem">
-                        <span id="routineOcularText">👁️ Escaneo Ocular / ONSD</span>
-                        <button type="button" id="btnMarkOcularCheck" class="routine-mini-btn">MARCAR</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ficha Forense de Archivo SOMA (Visible al dispararse SOMA) -->
-            <div id="somaDetailsCard" class="soma-details-card">
-                <div class="panel-header" style="margin-bottom: 4px;">
-                    <span class="panel-title" style="color: var(--crit-crimson);">[ENLACE DESCENDENTE CAJA NEGRA SOMA]</span>
-                    <span class="panel-badge" style="background: var(--crit-crimson); color: #fff;">RÁFAGA TRANSMITIDA</span>
-                </div>
-                <p style="font-family: var(--font-mono); font-size: 0.72rem; color: #ffccd9;">
-                    Registros biomédicos terminales archivados bajo protocolo militar y encolados para transmisión óptica hacia la Tierra.
-                </p>
-                <div class="soma-kv-grid">
-                    <div class="soma-kv-item">
-                        <div class="soma-k">FRECUENCIA DE MUESTREO</div>
-                        <div class="soma-v" id="somaSamplesCount">500 registros (1000 Hz)</div>
-                    </div>
-                    <div class="soma-kv-item">
-                        <div class="soma-k">CONTENEDOR DE DATOS</div>
-                        <div class="soma-v" id="somaDataSize">68.4 KB → 18.2 KB</div>
-                    </div>
-                    <div class="soma-kv-item">
-                        <div class="soma-k">COMPRESIÓN</div>
-                        <div class="soma-v" id="somaCompression">Zstd nivel 19 (3.65x)</div>
-                    </div>
-                    <div class="soma-kv-item">
-                        <div class="soma-k">CIFRADO DE SEGURIDAD</div>
-                        <div class="soma-v" id="somaCipher">AES-256-GCM</div>
-                    </div>
-                    <div class="soma-kv-item" style="grid-column: span 2;">
-                        <div class="soma-k">VECTOR DE INICIALIZACIÓN (NONCE)</div>
-                        <div class="soma-v" id="somaNonce">0x9F3E8B1A4C2D...</div>
-                    </div>
-                    <div class="soma-kv-item" style="grid-column: span 2;">
-                        <div class="soma-k">ETIQUETA DE AUTENTICACIÓN (TAG)</div>
-                        <div class="soma-v" id="somaTag">0x5C81E3FA...</div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- COLUMNA CENTRAL: Mapa Corporal Anatómico Interactivo y Matriz RIDGE (5 Pilares) -->
-        <div class="cockpit-col center-col">
-
-            <!-- Mapa Corporal Humano Interactivo (HUD Crew Dragon SVG) -->
-            <div class="glass-panel" id="bodyMapPanel">
-                <div class="panel-header">
-                    <span class="panel-title">MAPA ANATÓMICO INTERACTIVO DEL TRIPULANTE</span>
-                    <span class="panel-badge">INSPECCIÓN CLÍNICA POR ZONA (CLICK)</span>
-                </div>
-                <div class="body-map-layout">
-                    <div class="body-svg-stage">
-                        <svg id="astronautBodySvg" viewBox="0 0 240 420" role="img" aria-label="Mapa corporal interactivo del astronauta">
-                            <defs>
-                                <filter id="hudGlow" x="-30%" y="-30%" width="160%" height="160%">
-                                    <feGaussianBlur stdDeviation="2.5" result="blur"/>
-                                    <feMerge>
-                                        <feMergeNode in="blur"/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            <!-- Cuadrícula de fondo HUD -->
-                            <line x1="120" y1="10" x2="120" y2="410" stroke="rgba(0,243,255,0.12)" stroke-dasharray="4 4"/>
-                            <line x1="20" y1="115" x2="220" y2="115" stroke="rgba(0,243,255,0.1)" stroke-dasharray="3 4"/>
-                            <line x1="20" y1="225" x2="220" y2="225" stroke="rgba(0,243,255,0.1)" stroke-dasharray="3 4"/>
-
-                            <!-- ZONA 1: Cabeza / Neuro-Ocular -->
-                            <g class="body-zone nominal active-zone" data-zone="head" tabindex="0" role="button" aria-label="Cabeza y sistema neuro-ocular">
-                                <circle cx="120" cy="48" r="28" class="zone-shape"/>
-                                <path d="M104 42 L114 42 M126 42 L136 42" class="zone-detail"/>
-                                <circle cx="109" cy="42" r="3" class="zone-node"/>
-                                <circle cx="131" cy="42" r="3" class="zone-node"/>
-                                <rect x="112" y="74" width="16" height="12" rx="3" class="zone-shape"/>
-                                <text x="160" y="42" class="zone-label">NEURO-OCULAR</text>
-                            </g>
-
-                            <!-- ZONA 4 (parte superior/extremidades): Musculoesquelético / Extremidades -->
-                            <g class="body-zone nominal" data-zone="musculoskeletal" tabindex="0" role="button" aria-label="Sistema musculoesquelético y extremidades">
-                                <!-- Brazos -->
-                                <path d="M84 92 L54 114 L42 198 L58 202 L68 134 L82 114 Z" class="zone-shape"/>
-                                <path d="M156 92 L186 114 L198 198 L182 202 L172 134 L158 114 Z" class="zone-shape"/>
-                                <!-- Pelvis / Caderas y Piernas -->
-                                <path d="M88 228 L152 228 L158 254 L144 398 L126 398 L124 276 L116 276 L114 398 L96 398 L82 254 Z" class="zone-shape"/>
-                                <circle cx="51" cy="196" r="4" class="zone-node"/>
-                                <circle cx="189" cy="196" r="4" class="zone-node"/>
-                                <circle cx="104" cy="336" r="4" class="zone-node"/>
-                                <circle cx="136" cy="336" r="4" class="zone-node"/>
-                                <text x="162" y="340" class="zone-label">ARED / ÓSEO</text>
-                            </g>
-
-                            <!-- ZONA 2: Tórax / Cardiorrespiratorio -->
-                            <g class="body-zone nominal" data-zone="thorax" tabindex="0" role="button" aria-label="Tórax y sistema cardiorrespiratorio">
-                                <path d="M84 90 L156 90 L152 162 L88 162 Z" rx="8" class="zone-shape"/>
-                                <path d="M96 106 Q106 100 115 112 L115 148 L96 148 Z" class="zone-detail"/>
-                                <path d="M144 106 Q134 100 125 112 L125 148 L144 148 Z" class="zone-detail"/>
-                                <circle cx="127" cy="126" r="6" class="zone-node"/>
-                                <text x="160" y="126" class="zone-label">CARDIO-PULMONAR</text>
-                            </g>
-
-                            <!-- ZONA 3: Sistémico / Metabólico -->
-                            <g class="body-zone nominal" data-zone="systemic" tabindex="0" role="button" aria-label="Sistema sistémico y metabólico">
-                                <path d="M88 166 L152 166 L150 224 L90 224 Z" class="zone-shape"/>
-                                <circle cx="120" cy="195" r="14" class="zone-detail"/>
-                                <circle cx="120" cy="195" r="5" class="zone-node"/>
-                                <text x="160" y="198" class="zone-label">METABÓLICO / RAD</text>
-                            </g>
-                        </svg>
-
-                        <div class="body-zone-tabs">
-                            <button type="button" class="zone-tab-btn active" data-zone="head">🧠 Neuro-Ocular</button>
-                            <button type="button" class="zone-tab-btn" data-zone="thorax">🫁 Cardiorresp.</button>
-                            <button type="button" class="zone-tab-btn" data-zone="systemic">🧬 Metabólico</button>
-                            <button type="button" class="zone-tab-btn" data-zone="musculoskeletal">🦴 Musculoesq.</button>
-                        </div>
-                    </div>
-
-                    <div id="bodyZoneCard" class="body-inspection-card">
-                        <div class="body-card-head">
-                            <h3 id="zoneTitle">Cabeza / Neuro-Ocular</h3>
-                            <span id="zoneStatusBadge" class="directive-status-tag">NOMINAL</span>
-                        </div>
-                        <div class="body-card-section">
-                            <span class="body-card-k">FUNCIÓN FISIOLÓGICA EN EL ESPACIO</span>
-                            <p id="zoneFunction">—</p>
-                        </div>
-                        <div class="body-card-section">
-                            <span class="body-card-k">ESTADO ACTUAL DE SUS MÉTRICAS</span>
-                            <div id="zoneMetricsList" class="zone-metrics-grid"></div>
-                        </div>
-                        <div class="body-card-section">
-                            <span class="body-card-k">POR QUÉ ES NECESARIO EN MICROGRAVEDAD</span>
-                            <p id="zoneReason">—</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="glass-panel" style="padding-bottom: 12px;">
-                <div class="panel-header">
-                    <span class="panel-title">MATRIZ BIOMÉDICA NASA RIDGE</span>
-                    <span class="panel-badge">5 PELIGROS DEL VUELO ESPACIAL HUMANO</span>
-                </div>
-
-                <div class="ridge-matrix">
-
-                    <!-- R - Radiación -->
-                    <div class="pillar-card">
-                        <div class="pillar-card-header">
-                            <div class="pillar-badge">
-                                <span class="pillar-letter">R</span>
-                                <span>PELIGRO DE RADIACIÓN</span>
-                            </div>
-                            <span class="panel-badge">IONIZANTE · CSA RAD 2026</span>
-                        </div>
-                        <div class="pillar-metrics-grid">
-                            <div class="metric-cell">
-                                <span class="metric-name">Evento Agudo (SPE)</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_rad_acute">12.0</span>
-                                    <span class="metric-unit">mSv</span>
-                                </div>
-                                <span class="metric-threshold-tag">Límite: &gt;250 mSv CRÍTICO</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Acumulada en Carrera</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_rad_career">145.2</span>
-                                    <span class="metric-unit">mSv</span>
-                                </div>
-                                <span class="metric-threshold-tag">Límite: &gt;600 mSv CRÍTICO</span>
-                                <div class="progress-bar-wrap">
-                                    <div id="careerRadBar" class="progress-bar-fill" style="width: 24%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- I - Aislamiento -->
-                    <div class="pillar-card">
-                        <div class="pillar-card-header">
-                            <div class="pillar-badge">
-                                <span class="pillar-letter">I</span>
-                                <span>AISLAMIENTO Y CONFINAMIENTO</span>
-                            </div>
-                            <span class="panel-badge">NEURO-PSICOLÓGICO</span>
-                        </div>
-                        <div class="pillar-metrics-grid">
-                            <div class="metric-cell">
-                                <span class="metric-name">Sueño Últimas 24h</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_sleep_hours">5.8</span>
-                                    <span class="metric-unit">horas</span>
-                                </div>
-                                <span class="metric-threshold-tag">Alerta: &lt;6.0 h</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Caída HRV RMSSD</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_hrv_drop">18.5</span>
-                                    <span class="metric-unit">%</span>
-                                </div>
-                                <span class="metric-threshold-tag">Alerta: &gt;25.0%</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Tiempo de Reacción PVT</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_pvt_ms">280</span>
-                                    <span class="metric-unit">ms</span>
-                                </div>
-                                <span class="metric-threshold-tag">Nominal: &lt;300 ms</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Frecuencia Parpadeo</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_blink_rate">18</span>
-                                    <span class="metric-unit">parp/min</span>
-                                </div>
-                                <span class="metric-threshold-tag">Alerta: &lt;8 /min</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Microsueños</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_microsleep">0</span>
-                                    <span class="metric-unit">eventos</span>
-                                </div>
-                                <span class="metric-threshold-tag">Alerta: &ge;1</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Ánimo (Autoreporte)</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_crew_mood" style="font-size: 0.95rem;">OPTIMAL</span>
-                                </div>
-                                <span class="metric-threshold-tag">Cruce cámara / HRV</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- D - Distancia -->
-                    <div class="pillar-card">
-                        <div class="pillar-card-header">
-                            <div class="pillar-badge">
-                                <span class="pillar-letter">D</span>
-                                <span>DISTANCIA DESDE LA TIERRA</span>
-                            </div>
-                            <span class="panel-badge">LOGÍSTICA</span>
-                        </div>
-                        <div class="pillar-metrics-grid">
-                            <div class="metric-cell">
-                                <span class="metric-name">Retardo de Comunicación (Un Solo Sentido)</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_comm_delay">20.5</span>
-                                    <span class="metric-unit">min</span>
-                                </div>
-                                <span class="metric-threshold-tag">Modo Autónomo Forzado</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Suministros Médicos Restantes</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_med_supply">412</span>
-                                    <span class="metric-unit">días</span>
-                                </div>
-                                <span class="metric-threshold-tag">Margen de Reserva: 1.8x</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- G - Gravedad y Desacondicionamiento (Cardio + SANS) -->
-                    <div class="pillar-card">
-                        <div class="pillar-card-header">
-                            <div class="pillar-badge">
-                                <span class="pillar-letter">G</span>
-                                <span>CAMPOS GRAVITATORIOS / DESACONDICIONAMIENTO</span>
-                            </div>
-                            <span class="panel-badge">CARDIO Y SANS</span>
-                        </div>
-                        <div class="pillar-metrics-grid">
-                            <div class="metric-cell">
-                                <span class="metric-name">Frecuencia Cardíaca</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_hr">105</span>
-                                    <span class="metric-unit">LPM</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &gt;110 LPM</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Presión Arterial</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_bp">135/85</span>
-                                    <span class="metric-unit">mmHg</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &gt;155/95 mmHg</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Nervio Óptico (ONSD)</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_onsd">5.20</span>
-                                    <span class="metric-unit">mm</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &gt;5.8 mm (SANS ICP)</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Ejercicio Diario</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_exercise">1.5</span>
-                                    <span class="metric-unit">horas</span>
-                                </div>
-                                <span class="metric-threshold-tag">Objetivo: 2.5 h/día (ARED)</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Glucosa en Sangre</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_blood_sugar">92</span>
-                                    <span class="metric-unit">mg/dL</span>
-                                </div>
-                                <span class="metric-threshold-tag">Nominal: 65–140 mg/dL</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- E - Entorno Cerrado Hostil -->
-                    <div class="pillar-card full-width">
-                        <div class="pillar-card-header">
-                            <div class="pillar-badge">
-                                <span class="pillar-letter">E</span>
-                                <span>ENTORNO CERRADO HOSTIL (ECLSS)</span>
-                            </div>
-                            <span class="panel-badge">SOPORTE VITAL DE HÁBITAT</span>
-                        </div>
-                        <div class="pillar-metrics-grid">
-                            <div class="metric-cell">
-                                <span class="metric-name">ppCO2 en Cabina</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_ppco2">3.20</span>
-                                    <span class="metric-unit">mmHg</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &gt;3.0 mmHg (Hipercapnia)</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">SpO2 Arterial</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_spo2">94</span>
-                                    <span class="metric-unit">%</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &lt;95% (Hipoxia)</span>
-                            </div>
-                            <div class="metric-cell">
-                                <span class="metric-name">Temp. Corporal Central</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-value" id="val_temp">37.9</span>
-                                    <span class="metric-unit">°C</span>
-                                </div>
-                                <span class="metric-threshold-tag">Crítico: &gt;38.5 °C (Fiebre Espacial)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Inspector de Flujo JSON de Telemetría en Vivo -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <span class="panel-title">INSPECTOR DE FLUJO JSON EN VIVO</span>
-                    <span class="panel-badge">INGESTIÓN RIDGE DIRECTA</span>
-                </div>
-                <pre id="rawJsonViewer" class="raw-json-viewer">Conectando con el WebSocket del backend VitalGrid...</pre>
-            </div>
-
-        </div>
-
-        <!-- COLUMNA DERECHA: Directivas Clínicas de la IA Médico de Vuelo y Simulación Interactiva -->
-        <div class="cockpit-col right-col">
-
-            <div class="glass-panel" id="edemaPanel">
-                <div class="panel-header">
-                    <span class="panel-title">EDEMA FACIAL vs DÍA 1</span>
-                    <span class="panel-badge">CÁMARA LOCAL</span>
-                </div>
-                <p class="edema-note">Cambio geométrico contra la primera captura. No es un diagnóstico. El video se descarta al instante y no sale de esta máquina.</p>
-                <div class="edema-stage">
-                    <video id="edemaVideo" playsinline autoplay muted></video>
-                    <div id="edemaIdle" class="edema-idle">Cámara apagada</div>
-                </div>
-                <div id="edemaDelta" class="edema-delta">—</div>
-                <div id="edemaDeltaLabel" class="edema-delta-label">Sin línea base</div>
-                <div class="edema-metrics">
-                    <div><span>Pómulos</span><strong id="edemaCheek">—</strong></div>
-                    <div><span>Mandíbula</span><strong id="edemaJaw">—</strong></div>
-                    <div><span>Ancho / alto</span><strong id="edemaRound">—</strong></div>
-                </div>
-                <div class="edema-meta">
-                    <span id="edemaBaselineDate">Día 1: sin fijar</span>
-                    <span id="edemaDays"></span>
-                </div>
-                <div id="edemaChart" class="edema-chart" hidden></div>
-                <div id="edemaHistory" class="edema-history"></div>
-                <p id="edemaStatus" class="edema-status">Activá la cámara y mirá de frente, con el rostro en reposo.</p>
-                <div class="edema-actions">
-                    <button id="edemaCameraBtn" class="sim-btn" type="button">ACTIVAR CÁMARA</button>
-                    <button id="edemaCaptureBtn" class="sim-btn" type="button" disabled>FIJAR DÍA 1</button>
-                    <button id="edemaResetBtn" class="sim-btn edema-reset" type="button">BORRAR DÍA 1</button>
-                </div>
-            </div>
-
-            <!-- Directivas de la IA Médico de Vuelo -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <span class="panel-title">IA MÉDICO DE VUELO</span>
-                    <span class="panel-badge">DIRECTIVAS CLÍNICAS TÁCTICAS</span>
-                </div>
-
-                <div id="directivesList" class="directives-container">
-                    <div class="directive-card NOMINAL">
-                        <div class="directive-header">
-                            <span class="directive-status-tag">NOMINAL</span>
-                            <span class="directive-time">ESPERANDO TICK DE TELEMETRÍA</span>
-                        </div>
-                        <div class="directive-diagnosis">INICIALIZANDO PROTOCOLOS CLÍNICOS AUTÓNOMOS</div>
-                        <div class="directive-trigger">Evaluando payload RIDGE entrante contra estándares de la NASA.</div>
-                        <div class="directive-action-box">
-                            <div class="directive-action-label">Directiva:</div>
-                            Monitoreo pasivo activo.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Autoreporte y Laboratorio Manual del Tripulante -->
-            <div class="glass-panel" id="manualLabPanel">
-                <div class="panel-header">
-                    <span class="panel-title">AUTOREPORTE Y LAB MANUAL</span>
-                    <span class="panel-badge">TECLADO / CLIC / ULTRASONIDO</span>
-                </div>
-                <div class="manual-lab-grid">
-                    <div class="lab-input-row">
-                        <label for="inputBloodSugar">Glucosa en sangre (mg/dL)</label>
-                        <div class="lab-control-pair">
-                            <input type="number" id="inputBloodSugar" min="20" max="500" step="1" value="92" class="hud-input">
-                            <button type="button" id="btnSendBloodSugar" class="sim-btn lab-send-btn">ENVIAR</button>
-                        </div>
-                    </div>
-                    <div class="lab-input-row">
-                        <label for="inputOnsd">Ultrasonido ONSD (mm)</label>
-                        <div class="lab-control-pair">
-                            <input type="number" id="inputOnsd" min="2.0" max="10.0" step="0.1" value="5.2" class="hud-input">
-                            <button type="button" id="btnSendOnsd" class="sim-btn lab-send-btn">ENVIAR</button>
-                        </div>
-                    </div>
-                    <div class="lab-input-row">
-                        <label>Estado de Ánimo (Autoreporte)</label>
-                        <div class="mood-btn-grid">
-                            <button type="button" class="sim-btn mood-btn active" data-mood="OPTIMAL">OPTIMAL</button>
-                            <button type="button" class="sim-btn mood-btn" data-mood="FATIGUED">FATIGUED</button>
-                            <button type="button" class="sim-btn mood-btn" data-mood="STRESSED">STRESSED</button>
-                            <button type="button" class="sim-btn mood-btn" data-mood="LOW_MOOD">LOW_MOOD</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Respaldo Científico NASA OSDR (Caché Vivo) + CSA 2026 -->
-            <div class="glass-panel" id="osdrEvidencePanel">
-                <div class="panel-header">
-                    <span class="panel-title">RESPALDO NASA OSDR &amp; CSA</span>
-                    <span class="panel-badge" id="osdrCacheBadge">CARGANDO OSDR...</span>
-                </div>
-                <div class="osdr-summary-meta">
-                    <span id="osdrFilterLabel">NASA OSDR · CSA Bio-Monitor 2026 · NASA-STD-3001</span>
-                    <span id="osdrSyncedAt">Sincronización: —</span>
-                </div>
-                <div id="osdrStudiesList" class="osdr-study-list">
-                    <div class="osdr-study-card">
-                        <div class="osdr-study-title">Cargando datasets reales de NASA Open Science Data Repository...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cockpit de Simulación Interactiva de Anomalías -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <span class="panel-title">COCKPIT DE SIMULACIÓN</span>
-                    <span class="panel-badge">PANEL DE INYECCIÓN DE ANOMALÍAS</span>
-                </div>
-                <p style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 12px;">
-                    Inyecta fallas biomédicas críticas en el demonio C++ para demostrar las respuestas clínicas en tiempo real y las transmisiones láser de SOMA:
-                </p>
-
-                <div class="sim-controls-grid">
-                    <!-- Disparadores SOMA -->
-                    <button id="btnSos" class="sim-btn danger-btn">
-                        <span>🚨</span> ACTIVAR BOTÓN SOS
-                    </button>
-                    <button id="btnDepressurize" class="sim-btn danger-btn">
-                        <span>💥</span> DESCOMPRESIÓN DE CABINA
-                    </button>
-                    <button id="btnAsystole" class="sim-btn danger-btn">
-                        <span>💔</span> ASISTOLIA / PARO CARDÍACO
-                    </button>
-                    <button id="btnResetSurvival" class="sim-btn">
-                        <span>🛡️</span> RESTABLECER ALARMA SOMA
-                    </button>
-
-                    <!-- Disparadores de Umbrales Clínicos -->
-                    <button id="btnHypoxia" class="sim-btn">
-                        <span>🫁</span> INYECTAR HIPOXIA (&lt;95%)
-                    </button>
-                    <button id="btnHypercapnia" class="sim-btn">
-                        <span>💨</span> INYECTAR ppCO2 (&gt;3.0)
-                    </button>
-                    <button id="btnSans" class="sim-btn">
-                        <span>👁️</span> INYECTAR SANS (&gt;5.8mm)
-                    </button>
-                    <button id="btnSpeRadiation" class="sim-btn">
-                        <span>☢️</span> FULGURACIÓN SOLAR (&gt;250mSv)
-                    </button>
-                    <button id="btnFever" class="sim-btn">
-                        <span>🌡️</span> FIEBRE ESPACIAL (&gt;38.5°C)
-                    </button>
-                    <button id="btnFatigue" class="sim-btn">
-                        <span>💤</span> FATIGA CIRCADIANA
-                    </button>
-                    <button id="btnTachycardia" class="sim-btn">
-                        <span>❤️</span> TAQUICARDIA (&gt;110 LPM)
-                    </button>
-                    <button id="btnHyperglycemia" class="sim-btn">
-                        <span>🩸</span> GLUCOSA ALTA (&gt;140)
-                    </button>
-                    <button id="btnHypoglycemia" class="sim-btn">
-                        <span>🧪</span> HIPOGLUCEMIA (&lt;65)
-                    </button>
-                    <button id="btnSensorFault" class="sim-btn">
-                        <span>⚠️</span> FALLO DE SENSOR (GUARDRAIL)
-                    </button>
-
-                    <!-- Reinicio Nominal -->
-                    <button id="btnResetNominal" class="sim-btn reset-btn">
-                        <span>✨</span> RESTABLECER TODO A ESTADO NOMINAL
-                    </button>
-                </div>
-            </div>
-
-        </div>
-
-    </main>
-
-    <!-- Scripts -->
-    <script src="js/audio_synth.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/facial_edema.js"></script>
-    <script src="js/facial_edema_panel.js"></script>
+<script src="js/ecg.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/panel-camara.js"></script>
 </body>
 </html>
