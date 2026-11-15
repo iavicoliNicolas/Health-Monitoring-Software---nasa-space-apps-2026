@@ -51,6 +51,13 @@ let fpsT = performance.now(), fpsN = 0, fps = 0;
 
 let alActualizar = () => {};
 let alAvisar = () => {};
+let ultimosPuntos = null;
+
+// Últimos landmarks de la cara que ya está midiendo este módulo.
+// No abre otra cámara y no entra en el cálculo del EAR.
+export function puntosCara() {
+  return ultimosPuntos;
+}
 
 // --- WebSocket al daemon C++ -----------------------------------------------
 let ws = null, ultimoEnvioTelemetria = 0;
@@ -126,6 +133,7 @@ export function apagar() {
   if (stream) stream.getTracks().forEach(t => t.stop());
   video.srcObject = null;
 
+  ultimosPuntos = null;
   ctx.clearRect(0, 0, overlay.width, overlay.height);
   alAvisar({ camara: 'apagada', log: 'Cámara apagada. No se está midiendo.' });
 }
@@ -158,10 +166,12 @@ function bucle() {
 
     if (res.faceLandmarks && res.faceLandmarks.length) {
       const pts = res.faceLandmarks[0];
+      ultimosPuntos = pts;
       const e = (ear(pts, OJOS.derecho) + ear(pts, OJOS.izquierdo)) / 2;
       procesar(e, ahora);
       dibujarPuntos(pts);
     } else {
+      ultimosPuntos = null;
       ctx.clearRect(0, 0, overlay.width, overlay.height);
       alAvisar({ log: 'No veo una cara. Acercate o mejorá la luz.' });
     }

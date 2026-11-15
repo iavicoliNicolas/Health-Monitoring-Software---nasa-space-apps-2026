@@ -319,7 +319,7 @@ function todoSinMedicion(motivo) {
 }
 
 /* ===== Aplicar un payload ================================================
-   La conexión real entra en la parte 7. Esta función ya queda lista.
+   La llama el cliente WebSocket, una vez por frame que trae telemetry_ridge.
    ======================================================================== */
 function aplicar(p) {
   // El back manda "health_score" (ver src/models/ridge_payload.hpp).
@@ -386,9 +386,75 @@ document.querySelectorAll('.riel-btn').forEach(btn => {
   });
 });
 
+/* ===== Cliente WebSocket =================================================
+   El demonio emite en ws://127.0.0.1:9002. Un frame con telemetry_ridge
+   pinta el cockpit. Una alerta clínica no arma un panel aparte: el color
+   ya sale de los umbrales de metricas.json cuando aplicar() corre.
+   ======================================================================== */
+const WS_URL = 'ws://127.0.0.1:9002';
+const RECONEXION_MS = 1500;
+let socket = null;
+let reconexion = null;
+
+function marcarConexion(enLinea) {
+  const pastilla = $('pastillaConexion');
+  if (!pastilla) return;
+  pastilla.className = enLinea ? 'conexion conectado' : 'conexion desconectado';
+  $('etiquetaConexion').textContent = enLinea ? 'Telemetría en línea' : 'Sin conexión';
+}
+
+function programarReconexion() {
+  clearTimeout(reconexion);
+  reconexion = setTimeout(conectarTelemetria, RECONEXION_MS);
+}
+
+function conectarTelemetria() {
+  if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+    return;
+  }
+
+  let ws;
+  try {
+    ws = new WebSocket(WS_URL);
+  } catch (err) {
+    programarReconexion();
+    return;
+  }
+  socket = ws;
+
+  ws.onopen = () => {
+    if (socket !== ws) return;
+    marcarConexion(true);
+  };
+
+  ws.onmessage = ev => {
+    if (socket !== ws || typeof ev.data !== 'string') return;
+    let payload;
+    try {
+      payload = JSON.parse(ev.data);
+    } catch (err) {
+      return;
+    }
+    if (!payload || typeof payload !== 'object') return;
+    if (payload.telemetry_ridge) aplicar(payload);
+    // type === "CLINICAL_ALERT": no se arma el panel viejo de diagnóstico.
+  };
+
+  ws.onclose = () => {
+    if (socket !== ws) return;
+    marcarConexion(false);
+    todoSinMedicion();
+    programarReconexion();
+  };
+
+  ws.onerror = () => {
+    try { ws.close(); } catch (err) { /* onclose reconecta */ }
+  };
+}
+
 /* ===== Arranque ========================================================== */
 construir()
-  .then(() => todoSinMedicion('todavía no llegó telemetría'))
+  .then(() => conectarTelemetria())
   .catch(err => {
     console.error('[VitalGrid] No pude leer data/metricas.json', err);
     document.body.insertAdjacentHTML('afterbegin',

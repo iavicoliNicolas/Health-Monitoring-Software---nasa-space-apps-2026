@@ -45,8 +45,7 @@
         "x": 52.6,
         "y": 24
       },
-      "ruta": "telemetry_ridge.E_environment.respiratory_rate_bpm",
-      "_pendiente_back": "El back todavia no manda este campo. Pedir que agreguen respiratory_rate_bpm a EnvironmentTelemetry. Hasta entonces la tarjeta queda en SIN MEDICION, que es lo correcto."
+      "ruta": "telemetry_ridge.E_environment.respiratory_rate_bpm"
     },
     {
       "campo": "spo2_pct",

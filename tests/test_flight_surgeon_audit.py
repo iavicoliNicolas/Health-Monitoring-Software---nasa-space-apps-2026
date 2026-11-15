@@ -1,11 +1,21 @@
 import base64
 import json
+import os
 import re
 import socket
 import struct
 import subprocess
 import threading
 import time
+
+
+def repo_root():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def daemon_argv(port):
+    nombre = "vitalgrid_daemon.exe" if os.name == "nt" else "vitalgrid_daemon"
+    return [os.path.join(repo_root(), nombre), str(port)]
 
 
 def ws_connect(port):
@@ -120,8 +130,8 @@ def assert_clean_decimals(alerts):
 def run_audit_tests():
     port = 9006
     proc = subprocess.Popen(
-        ["./vitalgrid_daemon.exe", str(port)],
-        cwd="f:/VitalGrid",
+        daemon_argv(port),
+        cwd=repo_root(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

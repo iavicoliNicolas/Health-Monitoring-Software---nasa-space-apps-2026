@@ -7,9 +7,23 @@ import subprocess
 import os
 import signal
 
+
+def repo_root():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def daemon_argv(port):
+    nombre = "vitalgrid_daemon.exe" if os.name == "nt" else "vitalgrid_daemon"
+    return [os.path.join(repo_root(), nombre), str(port)]
+
 def run_integration_test():
     # 1. Start vitalgrid_daemon.exe
-    proc = subprocess.Popen(["./vitalgrid_daemon.exe", "9005"], cwd="f:/VitalGrid", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        daemon_argv(9005),
+        cwd=repo_root(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     time.sleep(1.2) # Allow daemon to bind port 9005
 
     try:
