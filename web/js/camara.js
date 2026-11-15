@@ -12,8 +12,10 @@
 // prototipo oscuro o la del cockpit claro — sin tocar una línea de medición.
 // ---------------------------------------------------------------------------
 
+// MediaPipe desde la copia local del repo (web/vendor/mediapipe), no del CDN:
+// si el wifi del evento falla o bloquea jsdelivr, la cámara arranca igual.
 import { FaceLandmarker, FilesetResolver }
-  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  from "../vendor/mediapipe/vision_bundle.mjs";
 
 // === CONSTANTES A CONFIRMAR CON EL OFTALMÓLOGO =============================
 // Las cuatro están puestas a ojo. Cada una es una pregunta de la entrevista.
@@ -84,19 +86,17 @@ function ear(pts, ojo) {
 
 // --- arranque --------------------------------------------------------------
 async function cargarModelo() {
-  alAvisar({ log: 'Cargando modelo…' });
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-  );
+  alAvisar({ log: 'Loading model…' });
+  const vision = await FilesetResolver.forVisionTasks("../vendor/mediapipe/wasm");
   landmarker = await FaceLandmarker.createFromOptions(vision, {
     baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      modelAssetPath: "../vendor/mediapipe/face_landmarker.task",
       delegate: "GPU"
     },
     runningMode: "VIDEO",
     numFaces: 1
   });
-  alAvisar({ log: 'Modelo listo.' });
+  alAvisar({ log: 'Model ready.' });
 }
 
 export async function encender() {
@@ -108,11 +108,11 @@ export async function encender() {
     overlay.width  = video.videoWidth;
     overlay.height = video.videoHeight;
     corriendo = true;
-    alAvisar({ camara: 'encendida', log: 'Midiendo. El video no se guarda en ningún lado.' });
+    alAvisar({ camara: 'encendida', log: 'Measuring. The video is never stored anywhere.' });
     requestAnimationFrame(bucle);
     return true;
   } catch (e) {
-    alAvisar({ camara: 'error', log: 'Error: ' + e.message + ' — abrí la página con un servidor local, no con doble clic.' });
+    alAvisar({ camara: 'error', log: 'Error: ' + e.message + ' — open the page through a local server, not by double-clicking it.' });
     return false;
   }
 }
@@ -127,7 +127,7 @@ export function apagar() {
   video.srcObject = null;
 
   ctx.clearRect(0, 0, overlay.width, overlay.height);
-  alAvisar({ camara: 'apagada', log: 'Cámara apagada. No se está midiendo.' });
+  alAvisar({ camara: 'apagada', log: 'Camera off. Nothing is being measured.' });
 }
 
 export function calibrar() {
@@ -141,7 +141,7 @@ export function reiniciar() {
   enviarMetrica("blink_rate", 0);
   enviarMetrica("microsleep", 0);
   enviarMetrica("perclos", 0);
-  alAvisar({ log: 'Conteo reiniciado.' });
+  alAvisar({ log: 'Counters reset.' });
 }
 
 // --- bucle principal -------------------------------------------------------
@@ -163,7 +163,7 @@ function bucle() {
       dibujarPuntos(pts);
     } else {
       ctx.clearRect(0, 0, overlay.width, overlay.height);
-      alAvisar({ log: 'No veo una cara. Acercate o mejorá la luz.' });
+      alAvisar({ log: 'No face detected. Move closer or improve the lighting.' });
     }
   }
 
@@ -179,13 +179,13 @@ function procesar(e, t) {
   if (calibrando) {
     valoresCal.push(e);
     const restan = Math.ceil((5000 - (t - tCal)) / 1000);
-    alAvisar({ log: `Calibrando… mantené los ojos abiertos (${restan})` });
+    alAvisar({ log: `Calibrating… keep your eyes open (${restan})` });
     if (t - tCal >= 5000) {
       valoresCal.sort((a, b) => a - b);
       const basal = valoresCal[Math.floor(valoresCal.length / 2)];   // mediana
       umbral = basal * CFG.FACTOR_CALIBRACION;
       calibrando = false;
-      alAvisar({ log: `Listo. Apertura basal ${basal.toFixed(3)} · umbral ${umbral.toFixed(3)}` });
+      alAvisar({ log: `Done. Baseline aperture ${basal.toFixed(3)} · threshold ${umbral.toFixed(3)}` });
     }
   }
 

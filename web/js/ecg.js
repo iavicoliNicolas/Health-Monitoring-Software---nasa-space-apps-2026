@@ -125,7 +125,7 @@ return {
     bpmActual = (typeof valor === 'number' && valor > 0) ? valor : null;
     const el = document.getElementById('ecgBpm');
     if (el) {
-      el.textContent = bpmActual ? `${Math.round(bpmActual)} lpm` : '— lpm';
+      el.textContent = bpmActual ? `${Math.round(bpmActual)} bpm` : '— bpm';
       el.className = 'ecg-bpm' + (bpmActual ? '' : ' sin-dato');
     }
     if (!bpmActual) puntos = [];

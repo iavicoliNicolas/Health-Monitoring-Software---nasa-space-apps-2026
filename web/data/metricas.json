@@ -1,19 +1,19 @@
 {
   "_doc": "Define QUE se dibuja, de donde sale y cual es su umbral. El HTML no tiene ni un umbral escrito a mano: toda la interfaz se arma leyendo este archivo. Cambiar un limite = cambiar una linea aca.",
   "_niveles": {
-    "N1": "Limite oficial de NASA",
-    "N2": "Literatura de vuelo revisada por pares",
-    "N3": "Analogo terrestre (Antartida, submarinos, bed rest)",
-    "N4": "Norma clinica terrestre, NO validada en microgravedad",
-    "SF": "Sin fuente: umbral provisional del equipo"
+    "N1": "Official NASA limit",
+    "N2": "Peer-reviewed spaceflight literature",
+    "N3": "Terrestrial analog (Antarctica, submarines, bed rest)",
+    "N4": "Terrestrial clinical norm, NOT validated in microgravity",
+    "SF": "No source: provisional team threshold"
   },
   "_vitales_doc": "Los signos vitales van arriba, grandes y solos. Son los que se miran primero. 'rango' es el texto de referencia que se muestra debajo del numero.",
   "vitales": [
     {
       "campo": "frecuencia_cardiaca",
-      "nombre": "Frecuencia cardíaca",
+      "nombre": "Heart rate",
       "icono": "corazon",
-      "unidad": "lpm",
+      "unidad": "bpm",
       "decimales": 0,
       "rango": "60 – 100",
       "critico": {
@@ -21,7 +21,7 @@
         "valor": 110
       },
       "nivel": "N4",
-      "fuente": "Norma clinica terrestre, NO validada en microgravedad",
+      "fuente": "Terrestrial clinical norm, NOT validated in microgravity",
       "zona": {
         "x": 50.6,
         "y": 27
@@ -30,9 +30,9 @@
     },
     {
       "campo": "frecuencia_respiratoria",
-      "nombre": "Frecuencia respiratoria",
+      "nombre": "Respiratory rate",
       "icono": "pulmon",
-      "unidad": "rpm",
+      "unidad": "br/min",
       "decimales": 0,
       "rango": "12 – 20",
       "critico": {
@@ -40,7 +40,7 @@
         "valor": 24
       },
       "nivel": "N4",
-      "fuente": "Norma clinica terrestre, NO validada en microgravedad",
+      "fuente": "Terrestrial clinical norm, NOT validated in microgravity",
       "zona": {
         "x": 52.6,
         "y": 24
@@ -50,7 +50,7 @@
     },
     {
       "campo": "spo2_pct",
-      "nombre": "Saturación O₂",
+      "nombre": "O\u2082 saturation",
       "icono": "gota",
       "unidad": "%",
       "decimales": 0,
@@ -60,7 +60,7 @@
         "valor": 95
       },
       "nivel": "N4",
-      "fuente": "Norma terrestre; la presion de cabina difiere",
+      "fuente": "Terrestrial norm; cabin pressure differs",
       "zona": {
         "x": 50,
         "y": 41
@@ -69,7 +69,7 @@
     },
     {
       "campo": "temperatura_c",
-      "nombre": "Temperatura",
+      "nombre": "Body temperature",
       "icono": "termometro",
       "unidad": "°C",
       "decimales": 1,
@@ -79,7 +79,7 @@
         "valor": 38.5
       },
       "nivel": "N4",
-      "fuente": "Norma terrestre; no hay conveccion natural",
+      "fuente": "Terrestrial norm; there is no natural convection",
       "zona": {
         "x": 50,
         "y": 5
@@ -88,7 +88,7 @@
     },
     {
       "campo": "presion_sistolica",
-      "nombre": "Presión arterial",
+      "nombre": "Blood pressure",
       "icono": "presion",
       "unidad": "mmHg",
       "decimales": 0,
@@ -99,7 +99,7 @@
         "valor": 155
       },
       "nivel": "N4",
-      "fuente": "Norma terrestre; los liquidos se redistribuyen a la cabeza",
+      "fuente": "Terrestrial norm; fluids shift headward",
       "zona": {
         "x": 44.5,
         "y": 40
@@ -111,12 +111,12 @@
   "grupos": [
     {
       "letra": "R",
-      "titulo": "Radiación",
-      "resumen": "Exposición ionizante acumulada y por evento solar.",
+      "titulo": "Radiation",
+      "resumen": "Cumulative ionizing exposure and per solar event.",
       "metricas": [
         {
           "campo": "rad_evento_agudo",
-          "nombre": "Evento agudo (SPE)",
+          "nombre": "Acute event (SPE)",
           "unidad": "mSv",
           "decimales": 1,
           "critico": {
@@ -124,12 +124,12 @@
             "valor": 250
           },
           "nivel": "N1",
-          "fuente": "NASA OCHMO - dosis efectiva por evento solar",
+          "fuente": "NASA OCHMO - effective dose per solar event",
           "ruta": "telemetry_ridge.R_radiation.acute_event_mSv"
         },
         {
           "campo": "rad_carrera",
-          "nombre": "Acumulada en carrera",
+          "nombre": "Career accumulated",
           "unidad": "mSv",
           "decimales": 1,
           "critico": {
@@ -145,12 +145,12 @@
     },
     {
       "letra": "I",
-      "titulo": "Aislamiento",
-      "resumen": "Sueño, fatiga y vigilancia. Lo que la autoevaluación no detecta.",
+      "titulo": "Isolation",
+      "resumen": "Sleep, fatigue and vigilance. What self-assessment misses.",
       "metricas": [
         {
           "campo": "sueno_24h",
-          "nombre": "Sueño últimas 24 h",
+          "nombre": "Sleep, last 24 h",
           "unidad": "h",
           "decimales": 1,
           "alerta": {
@@ -163,7 +163,7 @@
         },
         {
           "campo": "hrv_caida_pct",
-          "nombre": "Caída de HRV",
+          "nombre": "HRV drop",
           "unidad": "%",
           "decimales": 1,
           "alerta": {
@@ -171,12 +171,12 @@
             "valor": 25.0
           },
           "nivel": "N3",
-          "fuente": "Analogo de confinamiento",
+          "fuente": "Confinement analog",
           "ruta": "telemetry_ridge.I_isolation.hrv_rmssd_drop_pct"
         },
         {
           "campo": "pvt_ms",
-          "nombre": "Reacción PVT",
+          "nombre": "PVT reaction time",
           "unidad": "ms",
           "decimales": 0,
           "alerta": {
@@ -184,12 +184,12 @@
             "valor": 350
           },
           "nivel": "N2",
-          "fuente": "Literatura de vuelo",
+          "fuente": "Spaceflight literature",
           "ruta": "telemetry_ridge.I_isolation.pvt_reaction_time_ms"
         },
         {
           "campo": "parpadeos_min",
-          "nombre": "Parpadeos / min",
+          "nombre": "Blinks / min",
           "unidad": "/min",
           "decimales": 0,
           "alerta": {
@@ -197,7 +197,7 @@
             "valor": 8
           },
           "nivel": "N2",
-          "fuente": "FHWA-MCRT-98-006; filtro de 400 ms dentro del rango publicado",
+          "fuente": "FHWA-MCRT-98-006; 400 ms filter within the published range",
           "camara": true,
           "ruta": "telemetry_ridge.I_isolation.blink_rate_per_min"
         },
@@ -217,7 +217,7 @@
         },
         {
           "campo": "microsuenos",
-          "nombre": "Microsueños",
+          "nombre": "Microsleeps",
           "unidad": "",
           "decimales": 0,
           "critico": {
@@ -225,7 +225,7 @@
             "valor": 0
           },
           "nivel": "N2",
-          "fuente": "Literatura de vuelo",
+          "fuente": "Spaceflight literature",
           "camara": true,
           "ruta": "telemetry_ridge.I_isolation.microsleep_events"
         }
@@ -233,33 +233,33 @@
     },
     {
       "letra": "D",
-      "titulo": "Distancia",
-      "resumen": "Autonomía: nadie contesta en tiempo real.",
+      "titulo": "Distance",
+      "resumen": "Autonomy: no one answers in real time.",
       "metricas": [
         {
           "campo": "retardo_comm_min",
-          "nombre": "Retardo de comunicación",
-          "unidad": "min (una dirección)",
+          "nombre": "Communication delay",
+          "unidad": "min (one way)",
           "decimales": 1,
           "nivel": "N1",
-          "fuente": "Tiempo luz Tierra-Marte, maxima separacion",
+          "fuente": "Earth-Mars light time, maximum separation",
           "ruta": "telemetry_ridge.D_distance.comm_delay_oneway_min"
         },
         {
           "campo": "insumos_medicos_dias",
-          "nombre": "Insumos médicos",
-          "unidad": "días",
+          "nombre": "Medical supplies",
+          "unidad": "days",
           "decimales": 0,
           "nivel": "SF",
-          "fuente": "Margen definido por el equipo",
+          "fuente": "Margin defined by the team",
           "ruta": "telemetry_ridge.D_distance.med_supply_days_remaining"
         }
       ]
     },
     {
       "letra": "G",
-      "titulo": "Gravedad",
-      "resumen": "Desacondicionamiento cardiovascular y presión intracraneal.",
+      "titulo": "Gravity",
+      "resumen": "Cardiovascular deconditioning and intracranial pressure.",
       "metricas": [
         {
           "campo": "onsd_mm",
@@ -271,7 +271,7 @@
             "valor": 5.8
           },
           "nivel": "N2",
-          "fuente": "Literatura de vuelo sobre SANS",
+          "fuente": "Spaceflight literature on SANS",
           "zona": {
             "x": 48.1,
             "y": 7.6
@@ -280,7 +280,7 @@
         },
         {
           "campo": "ejercicio_h",
-          "nombre": "Ejercicio diario",
+          "nombre": "Daily exercise",
           "unidad": "h",
           "decimales": 1,
           "alerta": {
@@ -288,14 +288,14 @@
             "valor": 2.0
           },
           "nivel": "N1",
-          "fuente": "Contramedida oficial NASA",
+          "fuente": "Official NASA countermeasure",
           "barra": 2.5,
           "ruta": "telemetry_ridge.G_gravity.exercise_completed_hours"
         },
         {
           "campo": "glucosa_mg_dl",
           "ruta": "telemetry_ridge.G_gravity.blood_sugar_mg_dl",
-          "nombre": "Glucosa en sangre",
+          "nombre": "Blood glucose",
           "unidad": "mg/dL",
           "decimales": 0,
           "alerta": {
@@ -303,18 +303,18 @@
             "valor": 140
           },
           "nivel": "N4",
-          "fuente": "Norma clinica terrestre, NO validada en microgravedad"
+          "fuente": "Terrestrial clinical norm, NOT validated in microgravity"
         }
       ]
     },
     {
       "letra": "E",
-      "titulo": "Entorno",
-      "resumen": "Atmósfera de cabina: el hábitat es un circuito cerrado.",
+      "titulo": "Environment",
+      "resumen": "Cabin atmosphere: the habitat is a closed loop.",
       "metricas": [
         {
           "campo": "ppco2_mmHg",
-          "nombre": "CO₂ en cabina",
+          "nombre": "Cabin CO\u2082",
           "unidad": "mmHg",
           "decimales": 2,
           "critico": {
@@ -322,7 +322,7 @@
             "valor": 3.0
           },
           "nivel": "N1",
-          "fuente": "Limite oficial NASA",
+          "fuente": "Official NASA limit",
           "ruta": "telemetry_ridge.E_environment.cabin_ppco2_mmHg"
         }
       ]

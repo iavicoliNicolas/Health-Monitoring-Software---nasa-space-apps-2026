@@ -66,7 +66,7 @@ function alActualizar(d) {
 
   const est = $('estadoOjo');
   est.className = 'estado-ojo ' + (d.cerrado ? 'cerrado' : 'abierto');
-  est.textContent = d.cerrado ? 'Ojo cerrado' : 'Ojo abierto';
+  est.textContent = d.cerrado ? 'Eye closed' : 'Eye open';
 
   dibujarCurva(d.historia, d.umbral);
 
@@ -96,13 +96,13 @@ function alAviso(a) {
 
   if (a.enlace) {
     $('camLog').textContent = a.enlace === 'conectado'
-      ? 'Enlace con el daemon en línea.' : 'Reconectando con el daemon…';
+      ? 'Daemon link online.' : 'Reconnecting to the daemon…';
   }
 
   if (a.camara === 'encendida') {
     encendida = true;
     $('camOff').hidden = true;
-    estadoCamara('encendida', 'Cámara encendida');
+    estadoCamara('encendida', 'Camera on');
     botonApagar();
     $('btnCalibrar').disabled = false;
     $('btnReiniciar').disabled = false;
@@ -112,7 +112,7 @@ function alAviso(a) {
   if (a.camara === 'apagada') {
     encendida = false;
     $('camOff').hidden = false;
-    estadoCamara('apagada', 'Cámara apagada');
+    estadoCamara('apagada', 'Camera off');
     botonEncender();
     $('btnCalibrar').disabled = true;
     $('btnReiniciar').disabled = true;
@@ -124,12 +124,12 @@ function alAviso(a) {
     $('dPerclos').className = 'destacado';
     $('dMicro').className = 'destacado';
     $('estadoOjo').className = 'estado-ojo sin-dato';
-    $('estadoOjo').textContent = 'Sin medir';
+    $('estadoOjo').textContent = 'Not measuring';
     window.VitalGrid?.desdeCamara?.({ parpadeos_min: null, perclos_pct: null, microsuenos: null });
   }
   if (a.camara === 'error') {
     encendida = false;
-    estadoCamara('error', 'Error de cámara');
+    estadoCamara('error', 'Camera error');
     botonEncender();
   }
 }
@@ -142,14 +142,14 @@ let encendida = false;
 
 function botonEncender() {
   const b = $('btnEncender');
-  b.textContent = 'Encender';
+  b.textContent = 'Start';
   b.className = 'btn';
   b.disabled = false;
 }
 
 function botonApagar() {
   const b = $('btnEncender');
-  b.textContent = 'Apagar';
+  b.textContent = 'Stop';
   b.className = 'btn btn-sec';
   b.disabled = false;
 }
@@ -175,7 +175,7 @@ Camara.iniciar({
 $('btnEncender').addEventListener('click', () => {
   if (encendida) { Camara.apagar(); return; }
   $('btnEncender').disabled = true;
-  $('camLog').textContent = 'Pidiendo permiso de cámara…';
+  $('camLog').textContent = 'Requesting camera permission…';
   Camara.encender();
 });
 $('btnCalibrar').addEventListener('click', () => Camara.calibrar());
