@@ -2,7 +2,7 @@
   "source": "NASA Open Science Data Repository",
   "documentation": "https://genelab.nasa.gov/genelabAPIs",
   "endpoint": "https://osdr.nasa.gov/osdr/data/search",
-  "fetched_at": "2026-11-14T00:00:00Z",
+  "fetched_at": "2026-11-15T20:45:12Z",
   "query": {
     "type": "cgene",
     "from": 0,

@@ -12,6 +12,9 @@
     {
       "campo": "frecuencia_cardiaca",
       "nombre": "Heart rate",
+      "organo": "Heart & cardiovascular system",
+      "funcion": "Pumps oxygenated blood and nutrients through systemic and cerebral circulation.",
+      "por_que": "Microgravity removes hydrostatic pressure gradients, causing cardiac deconditioning, autonomic remodeling, and compensatory tachycardia.",
       "icono": "corazon",
       "unidad": "bpm",
       "decimales": 0,
@@ -31,11 +34,18 @@
     {
       "campo": "frecuencia_respiratoria",
       "nombre": "Respiratory rate",
+      "organo": "Lungs & respiratory drive",
+      "funcion": "Delivers oxygen to arterial blood and eliminates metabolic carbon dioxide (CO2).",
+      "por_que": "Without natural convection in zero-G, CO2 pockets accumulate near the face; breathing rate reveals hypercapnia, hypoxia, or respiratory depression early.",
       "icono": "pulmon",
       "unidad": "breaths/min",
       "decimales": 0,
       "rango": "12 – 20",
       "critico": {
+        "op": "<",
+        "valor": 10
+      },
+      "alerta": {
         "op": ">",
         "valor": 24
       },
@@ -45,12 +55,14 @@
         "x": 52.6,
         "y": 24
       },
-      "ruta": "telemetry_ridge.E_environment.respiratory_rate_bpm",
-      "_pendiente_back": "The backend does not send this field yet. Ask to add respiratory_rate_bpm to EnvironmentTelemetry. Until then the card stays at NO READING, which is correct."
+      "ruta": "telemetry_ridge.E_environment.respiratory_rate_bpm"
     },
     {
       "campo": "spo2_pct",
       "nombre": "Oxygen saturation",
+      "organo": "Arterial oxygenation & gas exchange",
+      "funcion": "Measures the percentage of hemoglobin bound to oxygen perfusing brain and vital tissues.",
+      "por_que": "Closed habitats are vulnerable to cabin depressurization, O2/N2 mix faults, and V/Q mismatch requiring immediate supplemental oxygen.",
       "icono": "gota",
       "unidad": "%",
       "decimales": 0,
@@ -70,6 +82,9 @@
     {
       "campo": "temperatura_c",
       "nombre": "Temperature",
+      "organo": "Thermoregulation & immune response",
+      "funcion": "Preserves metabolic homeostasis (~37 °C) across core organs and enzymatic systems.",
+      "por_que": "Microgravity eliminates convective cooling; combined with immune dysregulation and spaceflight microbial virulence, fever signals sepsis or thermal stress.",
       "icono": "termometro",
       "unidad": "°C",
       "decimales": 1,
@@ -89,6 +104,9 @@
     {
       "campo": "presion_sistolica",
       "nombre": "Blood pressure",
+      "organo": "Systemic arterial vasculature",
+      "funcion": "Maintains cerebral, renal, and tissue perfusion pressure across the vascular tree.",
+      "por_que": "Cephalad fluid shift (~2 L toward the upper body and head) alters baroreceptor reflexes and drives hypertensive or neuro-vascular risk.",
       "icono": "presion",
       "unidad": "mmHg",
       "decimales": 0,
@@ -264,6 +282,9 @@
         {
           "campo": "onsd_mm",
           "nombre": "ONSD (SANS)",
+          "organo": "Optic nerve sheath & intracranial pressure",
+          "funcion": "Encloses the optic nerve with cerebrospinal fluid directly reflecting intracranial pressure.",
+          "por_que": "Headward fluid shift in weightlessness elevates intracranial pressure, causing Spaceflight Associated Neuro-ocular Syndrome (SANS) and vision damage.",
           "unidad": "mm",
           "decimales": 2,
           "critico": {
@@ -298,6 +319,10 @@
           "nombre": "Blood glucose",
           "unidad": "mg/dL",
           "decimales": 0,
+          "critico": {
+            "op": "<",
+            "valor": 65
+          },
           "alerta": {
             "op": ">",
             "valor": 140

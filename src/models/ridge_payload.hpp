@@ -32,7 +32,7 @@ struct SurvivalStatus {
  */
 struct RadiationTelemetry {
     double career_accumulated_mSv = 145.2; // NASA career limit ~600 mSv
-    double acute_event_mSv = 12.0;         // Solar Particle Event (SPE) acute limit > 250 mSv
+    double acute_event_mSv = 8.5;          // Solar Particle Event (SPE) acute limit > 250 mSv
 
     std::string to_json() const {
         std::ostringstream ss;
@@ -49,9 +49,9 @@ struct RadiationTelemetry {
  * @brief I - Isolation & Confinement psycho-neuro metrics
  */
 struct IsolationTelemetry {
-    double sleep_hours_last_24h = 5.8;    // Sleep duration
-    double hrv_rmssd_drop_pct = 18.5;     // Autonomic nervous system stress index
-    int pvt_reaction_time_ms = 280;       // Psychomotor Vigilance Task (PVT) ms
+    double sleep_hours_last_24h = 7.2;    // Sleep duration
+    double hrv_rmssd_drop_pct = 12.0;     // Autonomic nervous system stress index
+    int pvt_reaction_time_ms = 240;       // Psychomotor Vigilance Task (PVT) ms
     int blink_rate_per_min = 18;          // Spontaneous blink rate per minute (eye fatigue indicator)
     int microsleep_events = 0;           // Cumulative microsleep episodes (>500ms involuntary closure)
     double perclos_pct = 0.0;            // Percentage of Eye Closure (PERCLOS) over moving window
@@ -77,7 +77,7 @@ struct IsolationTelemetry {
  * @brief D - Distance from Earth logistics & communications metrics
  */
 struct DistanceTelemetry {
-    double comm_delay_oneway_min = 20.5;   // One-way Mars-to-Earth light delay in minutes
+    double comm_delay_oneway_min = 20.0;   // One-way Mars-to-Earth light delay in minutes
     int med_supply_days_remaining = 412;  // Autonomous medical supply inventory
 
     std::string to_json() const {
@@ -95,11 +95,11 @@ struct DistanceTelemetry {
  * @brief G - Gravity fields & physiological deconditioning metrics (Cardio & SANS)
  */
 struct GravityTelemetry {
-    int heart_rate_bpm = 105;
-    int blood_pressure_sys = 135;
-    int blood_pressure_dia = 85;
-    double onsd_mm = 5.2;                   // Optic Nerve Sheath Diameter (SANS indicator: >5.8mm critical)
-    double exercise_completed_hours = 1.5; // Daily countermeasure compliance (ARED target 2.5h)
+    int heart_rate_bpm = 72;
+    int blood_pressure_sys = 120;
+    int blood_pressure_dia = 78;
+    double onsd_mm = 4.8;                   // Optic Nerve Sheath Diameter (SANS indicator: >5.8mm critical)
+    double exercise_completed_hours = 2.5; // Daily countermeasure compliance (ARED target 2.5h)
     int blood_sugar_mg_dl = 92;            // Capillary blood glucose mg/dL (nominal 65-140 mg/dL)
 
     std::string to_json() const {
@@ -121,9 +121,9 @@ struct GravityTelemetry {
  * @brief E - Hostile Closed Environment & Life Support metrics (ECLSS)
  */
 struct EnvironmentTelemetry {
-    double cabin_ppco2_mmHg = 3.2;      // Partial pressure CO2 (NASA nominal < 3.0 mmHg)
-    int spo2_pct = 94;                 // Blood oxygen saturation (< 95% hypoxemia)
-    double body_temperature_c = 37.9;   // Core temp (> 38.5 C space fever)
+    double cabin_ppco2_mmHg = 2.1;      // Partial pressure CO2 (NASA nominal < 3.0 mmHg)
+    int spo2_pct = 98;                 // Blood oxygen saturation (< 95% hypoxemia)
+    double body_temperature_c = 36.8;   // Core temp (> 38.5 C space fever)
     double respiratory_rate_bpm = 16.0; // Respiratory rate breaths/min (nominal 12-20 rpm)
 
     std::string to_json() const {
@@ -168,7 +168,7 @@ struct TelemetryRIDGE {
 struct RidgePayload {
     std::string timestamp = current_iso8601();
     std::string crew_member_id = "CMD-01";
-    int health_score = 92;
+    int health_score = 100;
     SurvivalStatus survival_status;
     TelemetryRIDGE telemetry_ridge;
 

@@ -107,9 +107,12 @@
           <div class="detalle oculto" id="detalle">
             <div class="detalle-cab">
               <b id="detalleNombre">—</b>
+              <span class="detalle-estado sin-dato" id="detalleEstado">No measurement</span>
               <button class="detalle-cerrar" id="detalleCerrar" aria-label="Close">×</button>
             </div>
             <div class="detalle-valor"><span id="detalleValor">—</span><small id="detalleUnidad"></small></div>
+            <p class="detalle-info" id="detalleFuncion"></p>
+            <p class="detalle-info" id="detallePorque"></p>
             <p class="detalle-fuente" id="detalleFuente"></p>
           </div>
 
@@ -216,6 +219,20 @@
           <canvas id="ecgCanvas" class="ecg-canvas"></canvas>
         </section>
       </div>
+
+      <!-- ===== BANDA · Directivas Clínicas Flight Surgeon AI & SOMA === -->
+      <section class="tarjeta banda directivas" id="panelDirectivas">
+        <div class="tarjeta-cab">
+          <h2>Flight Surgeon AI — Clinical directives &amp; SOMA watchdog</h2>
+          <span class="directivas-estado sin-dato" id="directivasEstado">
+            <span class="punto"></span><span id="directivasResumen">Waiting for telemetry…</span>
+          </span>
+        </div>
+        <div class="soma-banner oculto" id="somaBanner"></div>
+        <div class="alertas-lista" id="listaAlertas">
+          <div class="alerta-vacia">No active clinical alerts. Waiting for live stream…</div>
+        </div>
+      </section>
 
       <!-- ===== BANDA INFERIOR · Matriz RIDGE ========================= -->
       <section class="tarjeta banda" id="panelAnalisis">

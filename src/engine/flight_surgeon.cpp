@@ -448,7 +448,7 @@ int FlightSurgeonAI::compute_health_score(const RidgePayload& payload) const {
 
     // Environmental penalties
     if (e.cabin_ppco2_mmHg > 3.0) score -= 20.0;
-    else if (e.cabin_ppco2_mmHg > 2.0) score -= 5.0;
+    else if (e.cabin_ppco2_mmHg > 2.5) score -= 5.0;
     if (e.spo2_pct < 95) score -= 25.0;
     if (e.body_temperature_c > 38.5) score -= 20.0;
     if (e.respiratory_rate_bpm < THRESHOLD_RESP_RATE_LOW_CRIT_BPM) score -= 25.0;

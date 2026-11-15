@@ -12,9 +12,13 @@
 
 const SIN_DATO = '—';
 const $ = id => document.getElementById(id);
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
 
 let config = null;
 const tarjetas = new Map();   // campo del payload -> { nodo, def }
+let zonaSeleccionada = null;
 
 /* ===== Utilidades ======================================================== */
 
@@ -82,6 +86,9 @@ async function construir() {
    de umbrales, todo sale de data/metricas.json.
    ======================================================================== */
 function textoUmbral(m) {
+  if (m.critico && m.alerta) {
+    return `Crit ${m.critico.op}${m.critico.valor} · Warn ${m.alerta.op}${m.alerta.valor} ${m.unidad}`.trim();
+  }
   if (m.critico) return `Critical: ${m.critico.op}${m.critico.valor} ${m.unidad}`.trim();
   if (m.alerta)  return `Warning: ${m.alerta.op}${m.alerta.valor} ${m.unidad}`.trim();
   return 'No threshold defined';
@@ -204,6 +211,7 @@ function construirPuntos() {
     b.addEventListener('click', () => mostrarDetalle(b.dataset.zona));
   });
   $('detalleCerrar').addEventListener('click', () => {
+    zonaSeleccionada = null;
     $('detalle').classList.add('oculto');
     document.querySelectorAll('.punto-zona').forEach(p => p.classList.remove('activo'));
   });
@@ -212,20 +220,43 @@ function construirPuntos() {
 }
 
 let zonas = [];
+const crudosZonas = {};
+
+function estadoMetrica(def, valorNum) {
+  if (valorNum === null || valorNum === undefined || Number.isNaN(valorNum)) return 'sin-dato';
+  if (cruza(valorNum, def.critico)) return 'critico';
+  if (cruza(valorNum, def.alerta))  return 'alerta';
+  return 'ok';
+}
 
 function mostrarDetalle(campo) {
   const def = zonas.find(z => z.campo === campo);
   if (!def) return;
 
+  zonaSeleccionada = campo;
   document.querySelectorAll('.punto-zona').forEach(p =>
     p.classList.toggle('activo', p.dataset.zona === campo));
 
   const t = tarjetas.get(campo);
   const valor = t ? t.nodo.querySelector('.vital-num').textContent : ultimos[campo];
+  const estado = estadoMetrica(def, crudosZonas[campo]);
+  const estadoTxt = estado === 'critico' ? 'Critical'
+                  : estado === 'alerta'  ? 'Warning'
+                  : estado === 'ok'      ? 'Nominal'
+                  : 'No measurement';
 
-  $('detalleNombre').textContent = def.nombre;
+  $('detalleNombre').textContent = def.organo ? `${def.nombre} · ${def.organo}` : def.nombre;
+  const estEl = $('detalleEstado');
+  if (estEl) {
+    estEl.className = 'detalle-estado ' + estado;
+    estEl.textContent = estadoTxt;
+  }
   $('detalleValor').textContent  = valor ?? SIN_DATO;
   $('detalleUnidad').textContent = def.unidad || '';
+  const fnEl = $('detalleFuncion');
+  if (fnEl) fnEl.textContent = def.funcion ? `Organ function: ${def.funcion}` : '';
+  const pqEl = $('detallePorque');
+  if (pqEl) pqEl.textContent = def.por_que ? `Why measured in spaceflight: ${def.por_que}` : '';
   $('detalleFuente').textContent = `${def.nivel} · ${def.fuente}`;
   $('detalle').classList.remove('oculto');
 }
@@ -309,12 +340,15 @@ function pintarPuntaje(valor) {
 function todoSinMedicion(motivo) {
   tarjetas.forEach((_, campo) => pintarVital(campo, null));
   Object.keys(crudos).forEach(k => crudos[k] = null);
+  Object.keys(crudosZonas).forEach(k => crudosZonas[k] = null);
+  zonaSeleccionada = null;
   celdas.forEach((_, campo) => pintarCelda(campo, null));
   if (config) actualizarEstadoPilares();
   ECG.sinDato();
   zonas.forEach(z => pintarZona(z.campo, 'sin-dato'));
   pintarPuntaje(null);
   $('detalle').classList.add('oculto');
+  limpiarPanelDirectivas('No active clinical alerts. Waiting for live stream…', true);
   if (motivo) console.warn('[VitalGrid] No measurement:', motivo);
 }
 
@@ -327,6 +361,7 @@ function aplicar(p) {
 
   tarjetas.forEach(({ def }, campo) => {
     const v = porRuta(p, def.ruta);
+    crudosZonas[campo] = v;
     if (def.ruta_par) {                  // presión arterial: "135/85"
       const d = porRuta(p, def.ruta_par);
       if (v === null || d === null) pintarVital(campo, null);
@@ -341,16 +376,19 @@ function aplicar(p) {
   config.grupos.flatMap(g => g.metricas).forEach(m => {
     const v = porRuta(p, m.ruta);
     crudos[m.campo] = v;
+    crudosZonas[m.campo] = v;
     ultimos[m.campo] = v === null ? null : v.toFixed(m.decimales ?? 0);
     pintarCelda(m.campo, v);
     if (m.zona) {
-      pintarZona(m.campo, v === null ? 'sin-dato'
-               : cruza(v, m.critico) ? 'critico'
-               : cruza(v, m.alerta)  ? 'alerta' : 'ok');
+      pintarZona(m.campo, estadoMetrica(m, v));
     }
   });
 
   actualizarEstadoPilares();
+
+  if (zonaSeleccionada && $('detalle') && !$('detalle').classList.contains('oculto')) {
+    mostrarDetalle(zonaSeleccionada);
+  }
 
   // El trazado sigue la frecuencia medida. Sin dato, línea plana gris.
   ECG.bpm(porRuta(p, 'telemetry_ridge.G_gravity.heart_rate_bpm'));
@@ -371,46 +409,164 @@ function desdeCamara(metricas) {
   actualizarEstadoPilares();
 }
 
-/* ===== Asistente de Voz Clínico Offline en Inglés (Flight Surgeon AI) ==== */
+/* ===== Catálogo Clínico en Inglés, Alertas Visuales, SOMA y Voz (Flight Surgeon AI) ==== */
 let voiceAdvisorEnabled = true;
 const spokenAlerts = new Set();
 let activeTickAlertKeys = new Set();
+let currentTickAlerts = [];
 let somaSpoken = false;
 
-const ENGLISH_CLINICAL_BRIEFINGS = {
-  acute_event_mSv:
-    'Critical solar radiation alert. Acute radiation exposure detected. Decision guidance: if cabin carbon dioxide is elevated, purge the air scrubber and carry lithium hydroxide canisters before sealing the storm shelter hatch. Protocol: evacuate to the water-shielded storm shelter and administer Filgrastim 300 micrograms subcutaneously.',
-  career_accumulated_mSv:
-    'Critical radiation alert. Career ionizing radiation limit exceeded. Decision guidance: permanently suspend all extravehicular activities and relocate crew member to high-shielding habitat quarters.',
-  blood_pressure:
-    'Critical cardiovascular alert. Hypertensive crisis in microgravity detected. Decision guidance: halt all exercise immediately and secure the astronaut in a resting position. Protocol: administer sublingual Captopril 25 milligrams and recheck blood pressure in 10 minutes.',
-  heart_rate_bpm:
-    'Critical tachycardia alert. Elevated heart rate detected. Decision guidance: check cabin oxygen and carbon dioxide first; if hypoxia or hypercapnia is present, do not administer beta blockers. Otherwise perform a modified Valsalva maneuver, hydrate, and prepare intravenous Metoprolol 5 milligrams if persistent.',
-  onsd_mm:
-    'Critical neuro-ocular alert. Spaceflight Associated Neuro-ocular Syndrome with elevated intracranial pressure detected. Decision guidance: deploy Lower Body Negative Pressure at minus 35 millimeters of mercury for two hours and administer oral Acetazolamide 250 milligrams.',
-  blood_sugar_mg_dl:
-    'Metabolic alert on capillary blood glucose. Decision guidance: for hypoglycemia below 65, administer 15 to 20 grams of fast-acting oral glucose gel or intramuscular Glucagon 1 milligram. For hyperglycemia above 140, hydrate with 500 milliliters of water and perform 30 minutes of aerobic cycling.',
-  cabin_ppco2_mmHg:
-    'Critical environmental alert. Cabin hypercapnia detected. Decision guidance: cycle the Carbon Dioxide Removal Assembly to rapid emergency desorption, don oxygen masks, and activate backup lithium hydroxide canisters.',
-  spo2_pct:
-    'Critical hypoxemia alert. Blood oxygen saturation below 95 percent. Decision guidance: supply 100 percent oxygen via aviator mask at 6 liters per minute immediately and inspect cabin pressure sensors.',
-  body_temperature_c:
-    'Critical hyperthermia alert. Space fever detected above 38.5 degrees Celsius. Decision guidance: activate the Liquid Cooling and Ventilation Garment, infuse intravenous Acetaminophen 1000 milligrams, and draw blood for sepsis analysis.',
-  respiratory_rate_bpm:
-    'Respiratory rate alert detected. Decision guidance: if bradypnea below 10 breaths per minute, secure the airway, initiate 100 percent bag-valve-mask ventilation, and prepare Naloxone 0.4 milligrams. If tachypnea above 24 breaths per minute, verify local airflow for carbon dioxide pockets and guide slow diaphragmatic breathing.',
-  sleep_hours_last_24h:
-    'Cognitive fatigue warning. Chronic sleep debt detected below 6 hours. Decision guidance: prescribe a mandatory 60-minute restorative rest block under warm circadian lighting and suspend critical robotic operations.',
-  hrv_rmssd_drop_pct:
-    'Autonomic stress warning. Heart rate variability drop exceeds 25 percent. Decision guidance: initiate 15 minutes of guided resonant breathing biofeedback at 0.1 Hertz and reduce workstation sensory load.',
-  blink_rate_per_min:
-    'Ocular fatigue warning. Spontaneous blink rate has dropped below 8 blinks per minute. Decision guidance: apply the 20-20-20 visual rest protocol and administer lubricating ophthalmic drops.',
-  microsleep_events:
-    'Critical drowsiness warning. Involuntary microsleep episode detected by ocular tracker. Decision guidance: relieve the astronaut from active flight controls immediately and initiate mandatory rest.',
-  crew_mood_discrepancy:
-    'Behavioral discrepancy warning. Objective biometric and ocular sensors indicate fatigue despite an optimal self-report. Decision guidance: mitigate operational overconfidence, perform a 3-minute Psychomotor Vigilance Task, and reschedule critical maneuvers.',
-  SENSOR_ARTIFACT_REJECTED:
-    'Sensor coherence warning. Physically impossible transducer reading rejected by anti-hallucination guardrail. Decision guidance: do not administer medication; inspect and reattach chest electrodes, pulse oximeter, and thermistor.'
+const ENGLISH_CLINICAL_CATALOG = {
+  SENSOR_ARTIFACT_REJECTED: {
+    diagnosis: 'Sensor Coherence Guardrail — Physically Impossible Reading Rejected',
+    tactical_action: 'Anti-hallucination guardrail active: automated diagnoses suppressed for this cycle to avoid iatrogenic treatment. Inspect biomedical sensor bus and re-seat chest electrodes, finger oximeter, and thermistor.',
+    astronaut_explanation: 'A sensor reported a physically impossible reading (such as a loose electrode or poor contact). Do not take any medication; check that your chest patch, pulse oximeter, and thermometer are properly seated.',
+    speech: 'Sensor coherence warning. Physically impossible transducer reading rejected by anti-hallucination guardrail. Do not administer medication; inspect and reattach chest electrodes, pulse oximeter, and thermistor.'
+  },
+  acute_event_mSv_conflict: {
+    diagnosis: 'Multi-Pillar Conflict [R vs E]: Acute Solar Particle Event (SPE) + Toxic Cabin CO2',
+    tactical_action: 'Conflict resolution: DO NOT seal the storm shelter hatch before purging cabin air. Run rapid CDRA CO2 scrubbing and carry active lithium hydroxide (LiOH) canisters inside the water-shielded storm shelter before sealing the hatch. Initiate approved acute radiation medical-kit countermeasures per ISS Flight Surgeon protocol.',
+    astronaut_explanation: 'A solar storm requires moving into the shielded core, but cabin CO2 is elevated. Purge the air with the CDRA scrubber and bring chemical LiOH canisters inside before sealing the shelter hatch.',
+    speech: 'Critical multi-pillar radiation and CO2 alert. Do not seal the storm shelter hatch without purging cabin air first. Run rapid CDRA scrubbing, carry lithium hydroxide canisters inside the shelter, evacuate immediately, and follow the ISS radiation medical-kit protocol.'
+  },
+  acute_event_mSv: {
+    diagnosis: 'Acute Radiation Exposure — Solar Particle Event (SPE)',
+    tactical_action: 'Evacuate immediately to the water-shielded storm shelter core. Initiate approved acute radiation medical-kit countermeasures per ISS Flight Surgeon checklist and power down non-essential forward avionics.',
+    astronaut_explanation: 'High-energy solar particles capable of damaging bone marrow have arrived. Move immediately to the water-wall shielded shelter and carry your personal dosimeter with you.',
+    speech: 'Critical solar radiation alert. Acute particle event detected. Evacuate immediately to the water-shielded storm shelter, carry your dosimeter, and initiate the ISS radiation medical-kit countermeasure protocol.'
+  },
+  career_accumulated_mSv: {
+    diagnosis: 'Career Ionizing Radiation Limit Exceeded (> 600 mSv NASA-STD-3001)',
+    tactical_action: 'Permanently suspend all extravehicular activities (EVA). Relocate crew member to highest-shielding central habitat quarters and initiate scheduled cytogenetic monitoring.',
+    astronaut_explanation: 'You have exceeded the NASA-STD-3001 career cumulative radiation limit. Suspend all spacewalks and remain inside the most heavily shielded habitat modules.',
+    speech: 'Critical radiation alert. Career ionizing radiation limit exceeded. Permanently suspend all extravehicular activities and relocate crew member to high-shielding habitat quarters.'
+  },
+  blood_pressure: {
+    diagnosis: 'Microgravity Hypertensive Crisis — Cerebrovascular Risk',
+    tactical_action: 'Halt all aerobic and resistive exercise immediately and secure crew member in a resting position. Initiate approved antihypertensive medical-kit countermeasure per ISS checklist and recheck blood pressure every 10 minutes.',
+    astronaut_explanation: 'Your blood pressure has risen to levels that stress cerebral blood vessels. Stop exercising, rest calmly with your arm supported at heart level, and remeasure with the cuff in 10 minutes.',
+    speech: 'Critical cardiovascular alert. Hypertensive crisis in microgravity detected. Halt all exercise immediately, rest with arm at heart level, follow the ISS antihypertensive medical-kit protocol, and recheck blood pressure in 10 minutes.'
+  },
+  heart_rate_bpm_corr: {
+    diagnosis: 'Reflex Sinus Tachycardia Secondary to Cabin Hypoxia or Hypercapnia [G + E]',
+    tactical_action: 'Critical contraindication: PROHIBITED to administer beta-blockers, as tachycardia is compensating for low cabin O2 or high CO2. Prioritize immediate 100% supplemental O2 and ECLSS/CDRA atmospheric scrubbing.',
+    astronaut_explanation: 'Your heart is beating rapidly to compensate for low oxygen or excess CO2 in cabin air. Do not take rate-lowering medication; put on the oxygen mask and verify cabin air flow.',
+    speech: 'Critical tachycardia alert combined with hypoxia or hypercapnia. Do not administer beta blockers. Tachycardia is compensatory. Prioritize 100 percent supplemental oxygen and ECLSS air scrubbing immediately.'
+  },
+  heart_rate_bpm: {
+    diagnosis: 'Sustained Tachycardia / Autonomic Dysregulation in Microgravity',
+    tactical_action: 'Confirm cabin O2 and CO2 are nominal first. Perform modified Valsalva vagal maneuvers, hydrate, check electrolyte telemetry, and follow the approved ISS arrhythmia medical-kit checklist if persistent.',
+    astronaut_explanation: 'Your resting heart rate is elevated and can strain cardiac endurance in microgravity. Brace yourself safely, drink water, exhale forcefully against a closed mouthpiece for 15 seconds, and recheck your pulse.',
+    speech: 'Critical tachycardia alert. Elevated resting heart rate detected. Verify cabin oxygen and carbon dioxide first, hydrate, perform a modified Valsalva maneuver, and follow the ISS arrhythmia medical-kit protocol if persistent.'
+  },
+  onsd_mm: {
+    diagnosis: 'Spaceflight Associated Neuro-Ocular Syndrome (SANS) — Elevated Intracranial Pressure',
+    tactical_action: 'Deploy Lower Body Negative Pressure (LBNP) countermeasures per Flight Surgeon protocol to redistribute cephalad fluid, apply approved ISS SANS medical-kit checklist, and schedule high-resolution fundoscopy.',
+    astronaut_explanation: 'Without gravity, body fluid shifts toward your head and puts pressure on the optic nerve, risking vision changes. Apply ultrasound gel over the closed eyelid to confirm diameter and enter the LBNP chamber.',
+    speech: 'Critical neuro-ocular alert. Spaceflight Associated Neuro-ocular Syndrome with elevated intracranial pressure detected. Deploy Lower Body Negative Pressure, follow the ISS SANS medical-kit checklist, and schedule retinal imaging.'
+  },
+  blood_sugar_mg_dl_hypo: {
+    diagnosis: 'Acute Hypoglycemia (< 65 mg/dL) — Neuroglycopenic Risk',
+    tactical_action: 'Administer fast-acting oral glucose gel immediately; if consciousness is impaired, follow the approved emergency ISS hypoglycemia kit checklist. Suspend critical tasks and retest capillary glucose in 15 minutes.',
+    astronaut_explanation: 'Your blood sugar dropped too low and your brain needs immediate energy. Consume a glucose gel packet from the medical kit, rest, and retest your fingerstick glucose in 15 minutes.',
+    speech: 'Critical hypoglycemia alert. Blood glucose below 65 milligrams per deciliter. Administer fast-acting oral glucose gel immediately or use the emergency ISS hypoglycemia medical-kit checklist if impaired, suspend critical tasks, and recheck in 15 minutes.'
+  },
+  blood_sugar_mg_dl_hyper: {
+    diagnosis: 'Hyperglycemia (> 140 mg/dL) — Microgravity Insulin Resistance',
+    tactical_action: 'Restrict simple carbohydrates in current intake, encourage oral water hydration, and schedule aerobic cycle-ergometer exercise if clinically cleared. Recheck capillary glucose in 2 hours.',
+    astronaut_explanation: 'In microgravity, muscles absorb less glucose and spaceflight stress raises blood sugar. Drink water, avoid simple sugars today, and complete your aerobic exercise routine to improve insulin sensitivity.',
+    speech: 'Metabolic warning. Elevated capillary blood glucose above 140. Hydrate with water, avoid simple carbohydrates, perform scheduled aerobic exercise if cleared, and recheck glucose in two hours.'
+  },
+  cabin_ppco2_mmHg: {
+    diagnosis: 'Cabin Atmospheric Hypercapnia (ppCO2 > 3.0 mmHg) — ECLSS Degradation',
+    tactical_action: 'Cycle Carbon Dioxide Removal Assembly (CDRA) beds to rapid emergency desorption, don supplemental O2 masks if symptomatic, and activate backup lithium hydroxide (LiOH) canisters.',
+    astronaut_explanation: 'Carbon dioxide is building up in spacecraft air and can cause headaches and confusion. Verify compartment circulation fans, engage the CDRA scrubber, and keep your oxygen mask ready.',
+    speech: 'Critical environmental alert. Cabin hypercapnia detected above 3 millimeters of mercury. Cycle the Carbon Dioxide Removal Assembly to rapid emergency desorption, check local ventilation, and activate backup lithium hydroxide canisters.'
+  },
+  spo2_pct: {
+    diagnosis: 'Acute Hypoxemia (SpO2 < 95%) — Oxygenation Deficit',
+    tactical_action: 'Supply 100% supplemental O2 via aviator mask immediately and inspect suit/cabin oxygen partial pressure and total pressure sensors. Auscultate lung bases for atelectasis.',
+    astronaut_explanation: 'Your blood is carrying less oxygen than required for brain and organ function. Warm your hand, wipe the fingertip oximeter sensor to confirm the reading, and breathe supplemental oxygen.',
+    speech: 'Critical hypoxemia alert. Blood oxygen saturation below 95 percent. Supply 100 percent supplemental oxygen via mask immediately and inspect cabin oxygen and pressure sensors.'
+  },
+  body_temperature_c: {
+    diagnosis: 'Space Fever / Hyperthermia (> 38.5 °C) — Thermal Stress or Sepsis Risk',
+    tactical_action: 'Connect Liquid Cooling and Ventilation Garment (LCVG) active cooling loop, initiate approved ISS antipyretic medical-kit protocol, and draw bioanalyzer cartridge samples for infection/sepsis panel.',
+    astronaut_explanation: 'In space, body heat does not dissipate through natural convection, and fever signals infection or severe thermal stress. Confirm with a tympanic thermometer, hydrate, and activate the liquid cooling garment.',
+    speech: 'Critical hyperthermia alert. Body temperature exceeds 38.5 degrees Celsius. Activate the Liquid Cooling and Ventilation Garment, initiate the ISS antipyretic medical-kit protocol, and run a bioanalyzer sepsis check.'
+  },
+  respiratory_rate_bpm_brady: {
+    diagnosis: 'Severe Bradypnea (< 10 breaths/min) — Central Respiratory Depression',
+    tactical_action: 'Secure airway patency immediately, initiate 100% O2 bag-valve-mask ventilatory support, monitor continuous capnography, and prepare the ISS respiratory-depression reversal kit checklist.',
+    astronaut_explanation: 'Your breathing rate dropped to a dangerous level and your lungs are not renewing enough air. Put on a continuous-flow oxygen mask immediately and alert your crewmate on watch.',
+    speech: 'Critical respiratory alert. Severe bradypnea below 10 breaths per minute. Secure the airway, initiate 100 percent bag-valve-mask ventilation, monitor capnography, and follow the ISS reversal-kit checklist.'
+  },
+  respiratory_rate_bpm_tachy: {
+    diagnosis: 'Compensatory Tachypnea (> 24 breaths/min) — Ventilatory Stress',
+    tactical_action: 'Inspect local partial pressure CO2 and helmet/compartment fan airflow for CO2 pockets. Guide controlled diaphragmatic breathing (12–16 breaths/min), hydrate, and recheck SpO2 and lung sounds.',
+    astronaut_explanation: 'You are breathing too fast at rest, likely from stagnant CO2 pockets or acute stress. Move toward a cabin ventilation outlet and take slow, deep diaphragmatic breaths.',
+    speech: 'Respiratory warning. Tachypnea above 24 breaths per minute. Check local airflow for carbon dioxide pockets, hydrate, and guide slow diaphragmatic breathing.'
+  },
+  sleep_hours_last_24h: {
+    diagnosis: 'Chronic Sleep Debt (< 6.0 h) — Cognitive Fatigue Risk',
+    tactical_action: 'Prescribe a mandatory restorative rest period in darkened quarters under warm circadian lighting without 480 nm blue spectrum. Suspend critical robotic operations.',
+    astronaut_explanation: 'You slept less than 6 hours and without a natural solar cycle your biological clock drifts quickly. Schedule a rest block under warm lighting and hold precision maneuvers until recovered.',
+    speech: 'Cognitive fatigue warning. Chronic sleep debt detected below 6 hours. Schedule a mandatory restorative rest block under warm circadian lighting and suspend critical robotic operations.'
+  },
+  hrv_rmssd_drop_pct: {
+    diagnosis: 'Autonomic Sympathetic Dominance — High Allostatic Stress (HRV drop > 25%)',
+    tactical_action: 'Initiate 15 minutes of guided resonant breathing biofeedback at 0.1 Hz, reduce workstation sensory load, and evaluate stress/sleep recovery biomarkers.',
+    astronaut_explanation: 'Heart rate variability fell sharply, signaling sustained nervous-system stress from confinement or workload. Spend 10 minutes pacing slow 5-second inhales and 5-second exhales.',
+    speech: 'Autonomic stress warning. Heart rate variability drop exceeds 25 percent. Initiate guided resonant breathing biofeedback at 0.1 Hertz and reduce workstation sensory load.'
+  },
+  blink_rate_per_min: {
+    diagnosis: 'Ocular Fatigue & Hypovigilance — Low Blink Rate (< 8/min)',
+    tactical_action: 'Activate 20-20-20 visual rest protocol, apply lubricating ophthalmic drops from the medical kit, suspend precision robotic display tasks, and assess neurocognitive fatigue.',
+    astronaut_explanation: 'The eye camera detected very few blinks, indicating fixed staring from fatigue and corneal dryness. Look away from screens for 20 seconds and apply artificial tears.',
+    speech: 'Ocular fatigue warning. Spontaneous blink rate has dropped below 8 blinks per minute. Apply the 20-20-20 visual rest protocol and lubricating ophthalmic drops.'
+  },
+  microsleep_events: {
+    diagnosis: 'Involuntary Microsleep Event Detected (Eyelid Closure >= 500 ms)',
+    tactical_action: 'Emit immediate cabin auditory attention chime, notify mission commander, and immediately relieve the astronaut from active flight or robotic controls.',
+    astronaut_explanation: 'Your eyelids stayed closed involuntarily for over half a second on camera. Your brain is briefly shutting down from exhaustion; hand over active controls and rest immediately.',
+    speech: 'Critical drowsiness warning. Involuntary microsleep episode detected by ocular tracker. Relieve the astronaut from active flight controls immediately and initiate mandatory rest.'
+  },
+  crew_mood_discrepancy: {
+    diagnosis: 'Behavioral Self-Report Discrepancy — Masked Fatigue vs. OPTIMAL Mood',
+    tactical_action: 'Mitigate operational overconfidence bias: objective biometric sensors (MediaPipe eye tracker / HRV and sleep) contradict the OPTIMAL self-report. Run a 3-minute Psychomotor Vigilance Task (PVT) and reschedule critical maneuvers.',
+    astronaut_explanation: 'You reported feeling OPTIMAL, yet your eyes and cardiac sensors show clear signs of accumulated fatigue. In spaceflight it is common to underestimate fatigue; take a preventive break and test reaction time.',
+    speech: 'Behavioral discrepancy warning. Objective biometric and ocular sensors indicate fatigue despite an optimal self-report. Mitigate operational overconfidence, perform a 3-minute Psychomotor Vigilance Task, and reschedule critical maneuvers.'
+  }
 };
+
+function resolveClinicalEntry(alert) {
+  if (!alert) return null;
+  const metric = alert.trigger_metric || '';
+  const diag = String(alert.diagnosis || '');
+  const limit = String(alert.threshold_limit || '');
+
+  if (metric === 'acute_event_mSv') {
+    return (diag.includes('CONFLICTO') || limit.includes('CONFLICTO'))
+      ? ENGLISH_CLINICAL_CATALOG.acute_event_mSv_conflict
+      : ENGLISH_CLINICAL_CATALOG.acute_event_mSv;
+  }
+  if (metric === 'heart_rate_bpm') {
+    return (diag.includes('Hipoxia/Hipercapnia') || limit.includes('CORRELACIÓN'))
+      ? ENGLISH_CLINICAL_CATALOG.heart_rate_bpm_corr
+      : ENGLISH_CLINICAL_CATALOG.heart_rate_bpm;
+  }
+  if (metric === 'blood_sugar_mg_dl') {
+    return (alert.status === 'CRITICAL' || limit.includes('<'))
+      ? ENGLISH_CLINICAL_CATALOG.blood_sugar_mg_dl_hypo
+      : ENGLISH_CLINICAL_CATALOG.blood_sugar_mg_dl_hyper;
+  }
+  if (metric === 'respiratory_rate_bpm') {
+    return (alert.status === 'CRITICAL' || limit.includes('<'))
+      ? ENGLISH_CLINICAL_CATALOG.respiratory_rate_bpm_brady
+      : ENGLISH_CLINICAL_CATALOG.respiratory_rate_bpm_tachy;
+  }
+  return ENGLISH_CLINICAL_CATALOG[metric] || null;
+}
 
 function selectEnglishVoice() {
   if (!('speechSynthesis' in window)) return null;
@@ -442,11 +598,101 @@ function speak(texto) {
 
 function buildAlertSpeechEnglish(alert) {
   if (!alert) return '';
-  const metric = alert.trigger_metric || 'unknown_metric';
-  if (ENGLISH_CLINICAL_BRIEFINGS[metric]) {
-    return `Flight Surgeon AI ${alert.status || 'ALERT'}. ${ENGLISH_CLINICAL_BRIEFINGS[metric]}`;
+  const entry = resolveClinicalEntry(alert);
+  if (entry && entry.speech) {
+    return `Flight Surgeon AI ${alert.status || 'ALERT'}. ${entry.speech}`;
   }
+  const metric = alert.trigger_metric || 'unknown_metric';
   return `Flight Surgeon AI ${alert.status || 'ALERT'} on ${metric}. Diagnosis: ${alert.diagnosis || ''}. Tactical action: ${alert.tactical_action || ''}`;
+}
+
+function ocultarSomaBanner() {
+  const banner = $('somaBanner');
+  if (!banner) return;
+  banner.classList.add('oculto');
+  banner.innerHTML = '';
+}
+
+function renderizarSoma(soma) {
+  const banner = $('somaBanner');
+  if (!banner || !soma) return;
+  banner.innerHTML = `
+    <div class="soma-cab">
+      <b>SOMA WATCHDOG ACTIVE — SCIENTIFIC PRESERVATION &amp; DSOC OPTICAL LOCK</b>
+      <span class="soma-tag">AUTONOMOUS LOCK</span>
+    </div>
+    <div class="soma-grid">
+      <div class="soma-kv"><span>Trigger:</span><b>${escHtml(soma.trigger_reason)}</b></div>
+      <div class="soma-kv"><span>Incident UTC:</span><b>${escHtml(soma.incident_timestamp)}</b></div>
+      <div class="soma-kv"><span>Ring buffer:</span><b>${escHtml(soma.historical_samples_count)} samples (${escHtml(soma.compression_algorithm)} ${escHtml(soma.compression_ratio)}x)</b></div>
+      <div class="soma-kv"><span>Cipher:</span><b>${escHtml(soma.encryption_cipher)}</b></div>
+      <div class="soma-kv"><span>Laser terminal:</span><b>${escHtml(soma.dsoc_laser_terminal)}</b></div>
+      <div class="soma-kv"><span>Target ground:</span><b>${escHtml(soma.target_ground_station)} (${escHtml(soma.light_delay_minutes)} min light delay)</b></div>
+    </div>`;
+  banner.classList.remove('oculto');
+}
+
+function limpiarPanelDirectivas(mensaje, esconderSoma) {
+  const estadoEl = $('directivasEstado');
+  const resumenEl = $('directivasResumen');
+  const listaEl = $('listaAlertas');
+  if (estadoEl) estadoEl.className = 'directivas-estado sin-dato';
+  if (resumenEl) resumenEl.textContent = 'Waiting for telemetry…';
+  if (listaEl) {
+    listaEl.innerHTML = `<div class="alerta-vacia">${escHtml(mensaje || 'No active clinical alerts. Waiting for live stream…')}</div>`;
+  }
+  if (esconderSoma) ocultarSomaBanner();
+}
+
+function renderizarAlertas(alertas) {
+  const estadoEl = $('directivasEstado');
+  const resumenEl = $('directivasResumen');
+  const listaEl = $('listaAlertas');
+  if (!estadoEl || !resumenEl || !listaEl) return;
+
+  if (!wsConectado) {
+    limpiarPanelDirectivas('Daemon disconnected. Waiting for telemetry stream…', true);
+    return;
+  }
+
+  if (!alertas || alertas.length === 0) {
+    estadoEl.className = 'directivas-estado ok';
+    resumenEl.textContent = 'Nominal · All parameters within limits';
+    listaEl.innerHTML = '<div class="alerta-vacia ok">All physiological and environmental parameters are within NASA nominal limits.</div>';
+    return;
+  }
+
+  const ordenadas = [...alertas].sort((a, b) =>
+    (a.status === 'CRITICAL' ? 0 : 1) - (b.status === 'CRITICAL' ? 0 : 1)
+  );
+  const crits = ordenadas.filter(a => a.status === 'CRITICAL').length;
+  const warns = ordenadas.length - crits;
+
+  estadoEl.className = 'directivas-estado ' + (crits > 0 ? 'critico' : 'alerta');
+  const partesResumen = [];
+  if (crits > 0) partesResumen.push(`${crits} critical`);
+  if (warns > 0) partesResumen.push(`${warns} warning`);
+  resumenEl.textContent = partesResumen.join(' · ') || 'Alert active';
+
+  listaEl.innerHTML = ordenadas.map(a => {
+    const cls = a.status === 'CRITICAL' ? 'critico' : 'alerta';
+    const entry = resolveClinicalEntry(a);
+    const diag = entry ? entry.diagnosis : (a.diagnosis || '');
+    const action = entry ? entry.tactical_action : (a.tactical_action || '');
+    const expl = entry ? entry.astronaut_explanation : (a.astronaut_explanation || '');
+    const osdr = a.osdr_reference ? `<span class="alerta-osdr">NASA OSDR · ${escHtml(a.osdr_reference)}</span>` : '';
+    return `
+      <article class="alerta-item ${cls}">
+        <div class="alerta-cab">
+          <span class="alerta-badge">${escHtml(a.status || 'ALERT')}</span>
+          <span class="alerta-metrica">${escHtml(a.trigger_metric)}: <b>${escHtml(a.trigger_value)}</b> (limit ${escHtml(a.threshold_limit)})</span>
+          ${osdr}
+        </div>
+        <div class="alerta-titulo">${escHtml(diag)}</div>
+        <div class="alerta-accion"><b>Action:</b> ${escHtml(action)}</div>
+        ${expl ? `<div class="alerta-explicacion"><b>Crew explanation:</b> ${escHtml(expl)}</div>` : ''}
+      </article>`;
+  }).join('');
 }
 
 function configurarBotonVoiceAdvisor() {
@@ -475,6 +721,8 @@ function configurarBotonVoiceAdvisor() {
 window.addEventListener('vitalgrid:alert', (ev) => {
   const alert = ev.detail;
   if (!alert || (alert.status !== 'CRITICAL' && alert.status !== 'WARNING')) return;
+  currentTickAlerts.push(alert);
+  renderizarAlertas(currentTickAlerts);
   const key = `${alert.status}:${alert.trigger_metric}`;
   activeTickAlertKeys.add(key);
   if (!spokenAlerts.has(key)) {
@@ -483,13 +731,21 @@ window.addEventListener('vitalgrid:alert', (ev) => {
   }
 });
 
-window.addEventListener('vitalgrid:soma', () => {
+window.addEventListener('vitalgrid:soma', (ev) => {
+  renderizarSoma(ev.detail);
   if (!somaSpoken) {
     somaSpoken = true;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     speak(
       'Emergency alert. SOMA Watchdog activated. Crew vital signs or cabin survival compromised. Initiating scientific preservation protocol, biological cryostallization container lock, and encrypted DSOC deep-space optical laser transmission to Earth.'
     );
+  }
+});
+
+window.addEventListener('vitalgrid:connection', (ev) => {
+  if (!ev.detail || !ev.detail.connected) {
+    currentTickAlerts = [];
+    limpiarPanelDirectivas('Daemon disconnected. Waiting for telemetry stream…', true);
   }
 });
 
@@ -624,6 +880,7 @@ function conectarTelemetry() {
 
       if (data.telemetry_ridge) {
         activeTickAlertKeys = new Set();
+        currentTickAlerts = [];
         aplicar(data);
         window.dispatchEvent(new CustomEvent('vitalgrid:telemetry', { detail: data }));
 
@@ -631,15 +888,17 @@ function conectarTelemetry() {
             !data.survival_status.sos_panic_button_active &&
             data.survival_status.cabin_pressure_nominal) {
           somaSpoken = false;
+          ocultarSomaBanner();
         }
 
         // Al terminar el lote de alertas del tick (250 ms después), liberar del Set
-        // las alertas que ya volvieron a rango nominal para que puedan volver a anunciarse si se repiten.
+        // las alertas que ya volvieron a rango nominal y refrescar el panel visual de alertas.
         clearTimeout(timerLimpiezaAlertas);
         timerLimpiezaAlertas = setTimeout(() => {
           for (const k of Array.from(spokenAlerts)) {
             if (!activeTickAlertKeys.has(k)) spokenAlerts.delete(k);
           }
+          renderizarAlertas(currentTickAlerts);
         }, 250);
       } else if (data.type === 'CLINICAL_ALERT') {
         window.dispatchEvent(new CustomEvent('vitalgrid:alert', { detail: data }));

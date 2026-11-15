@@ -12,12 +12,6 @@ const MEDIAPIPE_LOCAL = {
   model:  new URL("../web/vendor/mediapipe/face_landmarker.task", import.meta.url).href
 };
 
-const MEDIAPIPE_CDN = {
-  bundle: "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm",
-  wasm:   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm",
-  model:  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-};
-
 // === CONSTANTES A CONFIRMAR CON EL OFTALMÓLOGO =============================
 // Las cuatro están puestas a ojo. Cada una es una pregunta de la entrevista.
 const CFG = {
@@ -133,10 +127,9 @@ async function cargarModelo() {
     landmarker = await cargarDesdeOrigen(MEDIAPIPE_LOCAL);
     $("log").textContent = "Model ready (100% local offline mode).";
   } catch (localErr) {
-    console.warn("[MediaPipe] Carga local falló, intentando fallback CDN:", localErr);
-    $("log").textContent = "Falling back to remote CDN…";
-    landmarker = await cargarDesdeOrigen(MEDIAPIPE_CDN);
-    $("log").textContent = "Model ready (via CDN fallback).";
+    console.error("[MediaPipe] Local offline model failed to load:", localErr);
+    $("log").textContent = "Local offline MediaPipe assets missing or failed to load.";
+    throw localErr;
   }
 }
 

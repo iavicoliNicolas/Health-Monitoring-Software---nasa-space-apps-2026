@@ -59,36 +59,36 @@ int main(int argc, char* argv[]) {
     RidgePayload state;
     state.timestamp = RidgePayload::current_iso8601();
     state.crew_member_id = "CMD-01";
-    state.health_score = 92;
+    // Base RIDGE metrics (initialized to 100% nominal resting baseline)
+    state.health_score = 100;
     state.survival_status.vital_signs_present = true;
     state.survival_status.sos_panic_button_active = false;
     state.survival_status.cabin_pressure_nominal = true;
 
-    // Base RIDGE metrics
     state.telemetry_ridge.R_radiation.career_accumulated_mSv = 145.2;
-    state.telemetry_ridge.R_radiation.acute_event_mSv = 12.0;
+    state.telemetry_ridge.R_radiation.acute_event_mSv = 8.5;
 
-    state.telemetry_ridge.I_isolation.sleep_hours_last_24h = 5.8;
-    state.telemetry_ridge.I_isolation.hrv_rmssd_drop_pct = 18.5;
-    state.telemetry_ridge.I_isolation.pvt_reaction_time_ms = 280;
+    state.telemetry_ridge.I_isolation.sleep_hours_last_24h = 7.2;
+    state.telemetry_ridge.I_isolation.hrv_rmssd_drop_pct = 12.0;
+    state.telemetry_ridge.I_isolation.pvt_reaction_time_ms = 240;
     state.telemetry_ridge.I_isolation.blink_rate_per_min = 18;
     state.telemetry_ridge.I_isolation.microsleep_events = 0;
     state.telemetry_ridge.I_isolation.perclos_pct = 0.0;
     state.telemetry_ridge.I_isolation.crew_mood = "OPTIMAL";
 
-    state.telemetry_ridge.D_distance.comm_delay_oneway_min = 20.5;
+    state.telemetry_ridge.D_distance.comm_delay_oneway_min = 20.0;
     state.telemetry_ridge.D_distance.med_supply_days_remaining = 412;
 
-    state.telemetry_ridge.G_gravity.heart_rate_bpm = 105;
-    state.telemetry_ridge.G_gravity.blood_pressure_sys = 135;
-    state.telemetry_ridge.G_gravity.blood_pressure_dia = 85;
-    state.telemetry_ridge.G_gravity.onsd_mm = 5.2;
-    state.telemetry_ridge.G_gravity.exercise_completed_hours = 1.5;
+    state.telemetry_ridge.G_gravity.heart_rate_bpm = 72;
+    state.telemetry_ridge.G_gravity.blood_pressure_sys = 120;
+    state.telemetry_ridge.G_gravity.blood_pressure_dia = 78;
+    state.telemetry_ridge.G_gravity.onsd_mm = 4.8;
+    state.telemetry_ridge.G_gravity.exercise_completed_hours = 2.5;
     state.telemetry_ridge.G_gravity.blood_sugar_mg_dl = 92;
 
-    state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 3.2;
-    state.telemetry_ridge.E_environment.spo2_pct = 94;
-    state.telemetry_ridge.E_environment.body_temperature_c = 37.9;
+    state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 2.1;
+    state.telemetry_ridge.E_environment.spo2_pct = 98;
+    state.telemetry_ridge.E_environment.body_temperature_c = 36.8;
     state.telemetry_ridge.E_environment.respiratory_rate_bpm = 16.0;
 
     // Wire SOMA broadcast to WebSocket BEFORE starting watchdog/server threads
@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
             state.telemetry_ridge.G_gravity.blood_pressure_sys = 120;
             state.telemetry_ridge.G_gravity.blood_pressure_dia = 78;
             state.telemetry_ridge.G_gravity.onsd_mm = 4.8;
-            state.telemetry_ridge.G_gravity.exercise_completed_hours = 1.5;
+            state.telemetry_ridge.G_gravity.exercise_completed_hours = 2.5;
             state.telemetry_ridge.G_gravity.blood_sugar_mg_dl = 92;
             state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 2.1;
             state.telemetry_ridge.E_environment.spo2_pct = 98;
@@ -283,37 +283,40 @@ int main(int argc, char* argv[]) {
         auto tick_start = std::chrono::steady_clock::now();
 
         RidgePayload current_sample;
+        RidgePayload canonical_state;
         {
             std::lock_guard<std::mutex> lock(state_mutex);
 
-            // Subtle physiological micro-fluctuations if alive and sensors are not in injected artifact state
-            const bool sensors_plausible =
-                state.survival_status.vital_signs_present &&
-                state.telemetry_ridge.G_gravity.heart_rate_bpm >= 40 &&
-                state.telemetry_ridge.E_environment.body_temperature_c >= 20.0;
-
-            if (sensors_plausible) {
-                state.telemetry_ridge.G_gravity.heart_rate_bpm =
-                    std::clamp(state.telemetry_ridge.G_gravity.heart_rate_bpm + hr_noise(gen), 40, 180);
-                state.telemetry_ridge.E_environment.cabin_ppco2_mmHg =
-                    std::max(0.1, state.telemetry_ridge.E_environment.cabin_ppco2_mmHg + noise_dist(gen) * 0.05);
-                state.telemetry_ridge.E_environment.body_temperature_c =
-                    std::clamp(state.telemetry_ridge.E_environment.body_temperature_c + noise_dist(gen) * 0.02, 34.0, 42.0);
-            }
-
             state.timestamp = RidgePayload::current_iso8601();
             state.health_score = flight_surgeon.compute_health_score(state);
+            canonical_state = state;
             current_sample = state;
+
+            // Subtle display-only micro-fluctuations when alive and outside injected artifact state.
+            // Kept isolated in current_sample so noise never accumulates or triggers false clinical alerts.
+            const bool sensors_plausible =
+                current_sample.survival_status.vital_signs_present &&
+                current_sample.telemetry_ridge.G_gravity.heart_rate_bpm >= 40 &&
+                current_sample.telemetry_ridge.E_environment.body_temperature_c >= 20.0;
+
+            if (sensors_plausible) {
+                current_sample.telemetry_ridge.G_gravity.heart_rate_bpm =
+                    std::clamp(current_sample.telemetry_ridge.G_gravity.heart_rate_bpm + hr_noise(gen), 40, 180);
+                current_sample.telemetry_ridge.E_environment.cabin_ppco2_mmHg =
+                    std::max(0.1, current_sample.telemetry_ridge.E_environment.cabin_ppco2_mmHg + noise_dist(gen) * 0.05);
+                current_sample.telemetry_ridge.E_environment.body_temperature_c =
+                    std::clamp(current_sample.telemetry_ridge.E_environment.body_temperature_c + noise_dist(gen) * 0.02, 34.0, 42.0);
+            }
         }
 
         // 1. Push to circular buffer
         telemetry_buffer.push(current_sample);
 
         // 2. Evaluate SOMA watchdog conditions
-        soma_watchdog.evaluate_survival_state(current_sample);
+        soma_watchdog.evaluate_survival_state(canonical_state);
 
-        // 3. Evaluate clinical decision thresholds (Flight Surgeon AI)
-        std::vector<ClinicalAlert> alerts = flight_surgeon.evaluate(current_sample);
+        // 3. Evaluate clinical decision thresholds (Flight Surgeon AI) on deterministic state
+        std::vector<ClinicalAlert> alerts = flight_surgeon.evaluate(canonical_state);
 
         // 4. Broadcast RIDGE payload JSON over WebSocket
         std::string ridge_json = current_sample.to_json();

@@ -477,8 +477,17 @@ body {
   background: var(--fondo-2);
 }
 .detalle.oculto { display: none; }
-.detalle-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.detalle-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .detalle-cab b { font-size: .8rem; }
+.detalle-estado {
+  margin-left: auto;
+  font-size: .64rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+}
+.detalle-estado.ok       { color: var(--ok);       background: var(--ok-suave); }
+.detalle-estado.alerta   { color: var(--alerta);   background: var(--alerta-suave); }
+.detalle-estado.critico  { color: var(--critico);  background: var(--critico-suave); }
+.detalle-estado.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
 .detalle-cerrar {
   background: none; border: 0; color: var(--tinta-3);
   font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 0 2px;
@@ -490,6 +499,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .detalle-valor small { font-size: .72rem; color: var(--tinta-3); }
+.detalle-info { margin: 5px 0 0; font-size: .71rem; color: var(--tinta-2); line-height: 1.42; }
+.detalle-info:empty { display: none; }
 .detalle-fuente { margin: 5px 0 0; font-size: .67rem; color: var(--tinta-3); line-height: 1.45; }
 
 .figura-nota { margin: 6px 0 0; font-size: .67rem; color: var(--tinta-3); text-align: center; }
@@ -625,4 +636,82 @@ body {
   color: var(--tinta-3);
   margin-bottom: 16px;
   user-select: none;
+}
+
+/* ===== Directivas Clínicas Flight Surgeon AI & SOMA ==================== */
+.directivas-estado {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .72rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px;
+}
+.directivas-estado .punto { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.directivas-estado.ok       { color: var(--ok);       background: var(--ok-suave); }
+.directivas-estado.alerta   { color: var(--alerta);   background: var(--alerta-suave); }
+.directivas-estado.critico  { color: var(--critico);  background: var(--critico-suave); }
+.directivas-estado.sin-dato { color: var(--sin-dato); background: var(--sin-dato-suave); }
+
+.soma-banner {
+  margin-bottom: 10px; padding: 11px 13px;
+  border-radius: var(--r-chico);
+  border: 1px solid var(--critico);
+  background: var(--critico-suave);
+}
+.soma-banner.oculto { display: none; }
+.soma-cab {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+}
+.soma-cab b { color: var(--critico); font-size: .8rem; letter-spacing: .02em; }
+.soma-tag {
+  font-family: var(--mono); font-size: .64rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 999px;
+  color: #fff; background: var(--critico);
+}
+.soma-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 6px 12px; font-size: .72rem; color: var(--tinta);
+}
+.soma-kv span { color: var(--tinta-2); margin-right: 4px; }
+.soma-kv b { font-family: var(--mono); font-weight: 600; font-size: .7rem; }
+
+.alertas-lista { display: flex; flex-direction: column; gap: 8px; }
+.alerta-vacia {
+  font-size: .75rem; color: var(--tinta-2);
+  padding: 8px 11px; border-radius: var(--r-chico);
+  background: var(--fondo-2);
+}
+.alerta-vacia.ok { color: var(--ok); background: var(--ok-suave); font-weight: 560; }
+
+.alerta-item {
+  padding: 10px 12px;
+  border-radius: var(--r-chico);
+  border-left: 3px solid var(--sin-dato);
+  background: var(--fondo-2);
+}
+.alerta-item.alerta  { border-left-color: var(--alerta);  background: var(--alerta-suave); }
+.alerta-item.critico { border-left-color: var(--critico); background: var(--critico-suave); }
+
+.alerta-cab {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; margin-bottom: 5px;
+}
+.alerta-badge {
+  font-family: var(--mono); font-size: .62rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px; color: #fff;
+}
+.alerta-item.alerta  .alerta-badge { background: var(--alerta); }
+.alerta-item.critico .alerta-badge { background: var(--critico); }
+.alerta-metrica { font-family: var(--mono); font-size: .7rem; color: var(--tinta); }
+.alerta-osdr {
+  margin-left: auto;
+  font-family: var(--mono); font-size: .64rem; font-weight: 600;
+  color: var(--acento); background: var(--blanco);
+  border: 1px solid var(--linea); padding: 2px 8px; border-radius: 999px;
+}
+.alerta-titulo { font-size: .78rem; font-weight: 640; color: var(--tinta); margin-bottom: 3px; }
+.alerta-accion { font-size: .74rem; color: var(--tinta); line-height: 1.45; }
+.alerta-explicacion {
+  margin-top: 5px; padding-top: 5px;
+  border-top: 1px solid rgba(22, 41, 61, .08);
+  font-size: .71rem; color: var(--tinta-2); line-height: 1.42;
 }
