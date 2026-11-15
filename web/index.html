@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Z.E.U.S · Telemetría</title>
+<title>Z.E.U.S · Telemetry</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16293d">
 <link rel="icon" type="image/png" sizes="192x192" href="iconos/zeus-192.png">
@@ -18,13 +18,13 @@
   <nav class="riel">
     <div class="riel-marca" title="Z.E.U.S">Z</div>
 
-    <button class="riel-btn activo" data-ir="inicio" title="Telemetría">
+    <button class="riel-btn activo" data-ir="inicio" title="Telemetry">
       <svg viewBox="0 0 24 24"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
     </button>
-    <button class="riel-btn" data-ir="panelCamara" title="Cámara">
+    <button class="riel-btn" data-ir="panelCamara" title="Camera">
       <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
     </button>
-    <button class="riel-btn" data-ir="panelAnalisis" title="Análisis">
+    <button class="riel-btn" data-ir="panelAnalisis" title="Analysis">
       <svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
     </button>
 
@@ -33,7 +33,7 @@
     <!-- Nombre de la app en el borde, leído de abajo hacia arriba -->
     <div class="riel-nombre">Z.E.U.S</div>
 
-    <div class="riel-crew" title="Cmdte. Marcus Vance">Z</div>
+    <div class="riel-crew" title="Cmdr. Marcus Vance">Z</div>
   </nav>
 
   <!-- ===== Hoja ======================================================= -->
@@ -46,7 +46,7 @@
       <div class="cabecera-der">
         <span class="met" id="reloj">MET +000:00:00:00</span>
         <span class="conexion desconectado" id="pastillaConexion">
-          <span class="punto"></span><span id="etiquetaConexion">Sin conexión</span>
+          <span class="punto"></span><span id="etiquetaConexion">No connection</span>
         </span>
       </div>
     </header>
@@ -65,10 +65,10 @@
             </svg>
             <div class="anillo-centro">
               <b id="puntajeNum">--</b>
-              <span id="puntajeEstado">sin medición</span>
+              <span id="puntajeEstado">no reading</span>
             </div>
           </div>
-          <p class="puntaje-lbl">Puntaje de salud</p>
+          <p class="puntaje-lbl">Health score</p>
         </section>
 
         <!-- Signos vitales -->
@@ -76,7 +76,7 @@
 
         <!-- Panel de simulación -->
         <section class="tarjeta">
-          <div class="placeholder">Parte 6 · Panel de simulación</div>
+          <div class="placeholder">Part 6 · Simulation panel</div>
         </section>
 
       </div>
@@ -85,8 +85,8 @@
       <div class="col-centro">
         <section class="tarjeta alto-total cuerpo">
           <div class="tarjeta-cab">
-            <h2>Mapa del tripulante</h2>
-            <span class="pista">Tocá un punto para ver la métrica</span>
+            <h2>Crew map</h2>
+            <span class="pista">Tap a point to see the metric</span>
           </div>
 
           <!-- ACÁ VA EL RENDER DE TU COMPAÑERA: reemplazá este <svg> por
@@ -94,7 +94,7 @@
                Los puntos se posicionan en % sobre el contenedor, así que
                siguen funcionando con cualquier render del mismo encuadre. -->
           <div class="figura" id="figura">
-            <img class="silueta" src="assets/cuerpo.png" alt="Mapa anatómico del tripulante">
+            <img class="silueta" src="assets/cuerpo.png" alt="Anatomical map of the crew member">
 
             <div class="puntos" id="puntos"></div>
           </div>
@@ -103,13 +103,13 @@
           <div class="detalle oculto" id="detalle">
             <div class="detalle-cab">
               <b id="detalleNombre">—</b>
-              <button class="detalle-cerrar" id="detalleCerrar" aria-label="Cerrar">×</button>
+              <button class="detalle-cerrar" id="detalleCerrar" aria-label="Close">×</button>
             </div>
             <div class="detalle-valor"><span id="detalleValor">—</span><small id="detalleUnidad"></small></div>
             <p class="detalle-fuente" id="detalleFuente"></p>
           </div>
 
-          <p class="figura-nota">Los puntos cambian de color con el estado de su métrica. Gris = sin medición.</p>
+          <p class="figura-nota">Points change color with the state of their metric. Gray = no reading.</p>
         </section>
       </div>
 
@@ -119,17 +119,17 @@
         <!-- ===== CÁMARA · MediaPipe ================================ -->
         <section class="tarjeta camara" id="panelCamara">
           <div class="tarjeta-cab">
-            <h2>Cámara</h2>
+            <h2>Camera</h2>
             <span class="cam-estado apagada" id="camEstado">
-              <span class="punto"></span>Cámara apagada
+              <span class="punto"></span>Camera off
             </span>
           </div>
 
           <!-- Tres pestañas: cada una con sus propias métricas -->
           <div class="pestanas" role="tablist">
-            <button class="pestana activa" data-tab="parpados" role="tab">Párpados</button>
-            <button class="pestana"        data-tab="cansancio" role="tab">Cansancio</button>
-            <button class="pestana"        data-tab="edema"     role="tab">Edema facial</button>
+            <button class="pestana activa" data-tab="parpados" role="tab">Eyelids</button>
+            <button class="pestana"        data-tab="cansancio" role="tab">Fatigue</button>
+            <button class="pestana"        data-tab="edema"     role="tab">Facial edema</button>
           </div>
 
           <!-- Display de la cámara -->
@@ -138,24 +138,24 @@
             <canvas id="overlay"></canvas>
             <div class="cam-off" id="camOff">
               <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
-              <span>Cámara apagada</span>
+              <span>Camera off</span>
             </div>
           </div>
 
           <div class="cam-btns">
-            <button class="btn" id="btnEncender">Encender</button>
-            <button class="btn btn-sec" id="btnCalibrar" disabled>Calibrar</button>
-            <button class="btn btn-sec" id="btnReiniciar" disabled>Reiniciar</button>
+            <button class="btn" id="btnEncender">Turn on</button>
+            <button class="btn btn-sec" id="btnCalibrar" disabled>Calibrate</button>
+            <button class="btn btn-sec" id="btnReiniciar" disabled>Reset</button>
           </div>
 
           <!-- ===== Panel: PÁRPADOS ===== -->
           <div class="tab-panel activo" data-panel="parpados">
-            <div class="estado-ojo sin-dato" id="estadoOjo">Sin medir</div>
+            <div class="estado-ojo sin-dato" id="estadoOjo">Not measuring</div>
             <div class="cam-lista">
-              <div class="cam-fila"><span>Apertura (EAR)</span><b id="vEar">—</b></div>
-              <div class="cam-fila"><span>Umbral de cierre</span><b id="vUmbral">0.120</b></div>
-              <div class="cam-fila"><span>Parpadeos / min</span><b id="vParpadeos">—</b></div>
-              <div class="cam-fila"><span>Último cierre</span><b id="vDuracion">—</b></div>
+              <div class="cam-fila"><span>Aperture (EAR)</span><b id="vEar">—</b></div>
+              <div class="cam-fila"><span>Closure threshold</span><b id="vUmbral">0.120</b></div>
+              <div class="cam-fila"><span>Blinks / min</span><b id="vParpadeos">—</b></div>
+              <div class="cam-fila"><span>Last closure</span><b id="vDuracion">—</b></div>
             </div>
             <canvas id="curva" class="curva"></canvas>
           </div>
@@ -164,49 +164,49 @@
           <div class="tab-panel" data-panel="cansancio">
             <div class="cam-destacados">
               <div class="destacado" id="dPerclos">
-                <b>—</b><span>PERCLOS</span><small>% de tiempo con el ojo cerrado</small>
+                <b>—</b><span>PERCLOS</span><small>% of time with the eye closed</small>
               </div>
               <div class="destacado" id="dMicro">
-                <b>—</b><span>Microsueños</span><small>cierres ≥ 500 ms</small>
+                <b>—</b><span>Microsleeps</span><small>closures ≥ 500 ms</small>
               </div>
             </div>
             <div class="cam-lista">
-              <div class="cam-fila"><span>Cuadros por segundo</span><b id="vFps">—</b></div>
-              <div class="cam-fila"><span>Ventana de análisis</span><b>60 s</b></div>
+              <div class="cam-fila"><span>Frames per second</span><b id="vFps">—</b></div>
+              <div class="cam-fila"><span>Analysis window</span><b>60 s</b></div>
             </div>
             <p class="nota">
-              PERCLOS no es lo mismo que parpadeos por minuto: mide <b>cuánto tiempo</b>
-              estuvo cerrado el ojo, no cuántas veces. Una persona cansada puede parpadear
-              igual, pero cada parpadeo le dura más.
+              PERCLOS is not the same as blinks per minute: it measures <b>how long</b>
+              the eye stayed closed, not how many times. A tired person can blink
+              just as often, but each blink lasts longer.
             </p>
           </div>
 
           <!-- ===== Panel: EDEMA FACIAL ===== -->
           <div class="tab-panel" data-panel="edema">
             <div class="cam-lista">
-              <div class="cam-fila"><span>Pómulos vs día 1</span><b id="vPomulos">—</b></div>
-              <div class="cam-fila"><span>Mandíbula vs día 1</span><b id="vMandibula">—</b></div>
-              <div class="cam-fila"><span>Ancho / alto</span><b id="vRatio">—</b></div>
-              <div class="cam-fila"><span>Línea base</span><b id="vDia1">sin fijar</b></div>
+              <div class="cam-fila"><span>Cheeks vs day 1</span><b id="vPomulos">—</b></div>
+              <div class="cam-fila"><span>Jaw vs day 1</span><b id="vMandibula">—</b></div>
+              <div class="cam-fila"><span>Width / height</span><b id="vRatio">—</b></div>
+              <div class="cam-fila"><span>Baseline</span><b id="vDia1">not set</b></div>
             </div>
             <div class="cam-btns">
-              <button class="btn btn-sec" id="btnFijarDia1" disabled>Fijar día 1</button>
+              <button class="btn btn-sec" id="btnFijarDia1" disabled>Set day 1</button>
             </div>
             <p class="nota">
-              En microgravedad unos 2 litros de fluido se desplazan hacia la cabeza en las
-              primeras 6–10 horas, y la hinchazón periorbital persiste toda la misión.
-              <b>Falta portar <code>facial_edema.js</code> del repo anterior.</b>
+              In microgravity about 2 liters of fluid shift toward the head in the
+              first 6–10 hours, and the periorbital swelling lasts the whole mission.
+              <b><code>facial_edema.js</code> from the previous repo still needs to be ported.</b>
             </p>
           </div>
 
-          <p class="log" id="camLog">Esperando…</p>
+          <p class="log" id="camLog">Waiting…</p>
         </section>
 
         <!-- ===== Trazado cardíaco ================================== -->
         <section class="tarjeta ecg">
           <div class="tarjeta-cab">
-            <h2>Trazado cardíaco</h2>
-            <span class="ecg-bpm sin-dato" id="ecgBpm">— lpm</span>
+            <h2>Cardiac trace</h2>
+            <span class="ecg-bpm sin-dato" id="ecgBpm">— bpm</span>
           </div>
           <canvas id="ecgCanvas" class="ecg-canvas"></canvas>
         </section>
@@ -215,8 +215,8 @@
       <!-- ===== BANDA INFERIOR · Matriz RIDGE ========================= -->
       <section class="tarjeta banda" id="panelAnalisis">
         <div class="tarjeta-cab">
-          <h2>Análisis — Matriz biomédica NASA RIDGE</h2>
-          <span class="pista">5 peligros del vuelo espacial humano</span>
+          <h2>Analysis — NASA RIDGE biomedical matrix</h2>
+          <span class="pista">5 hazards of human spaceflight</span>
         </div>
         <div class="pilares" id="grupos"></div>
         <div class="leyenda" id="leyenda"></div>

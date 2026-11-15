@@ -57,14 +57,14 @@ function conectarWebSocket() {
       console.log("[PERIPHERAL EYE TRACKER] Conectado a VitalGrid Daemon en", CFG.WS_URL);
       const el = $("v-ws");
       if (el) {
-        el.textContent = "ONLINE (CONECTADO)";
+        el.textContent = "ONLINE (CONNECTED)";
         el.style.color = "var(--ok)";
       }
     };
     ws.onclose = () => {
       const el = $("v-ws");
       if (el) {
-        el.textContent = "RECONECTANDO...";
+        el.textContent = "RECONNECTING...";
         el.style.color = "var(--warn)";
       }
       setTimeout(conectarWebSocket, 2000);
@@ -128,15 +128,15 @@ async function cargarDesdeOrigen(origen) {
 }
 
 async function cargarModelo() {
-  $("log").textContent = "Cargando modelo local offline…";
+  $("log").textContent = "Loading local offline model…";
   try {
     landmarker = await cargarDesdeOrigen(MEDIAPIPE_LOCAL);
-    $("log").textContent = "Modelo listo (modo 100% offline local).";
+    $("log").textContent = "Model ready (100% local offline mode).";
   } catch (localErr) {
     console.warn("[MediaPipe] Carga local falló, intentando fallback CDN:", localErr);
-    $("log").textContent = "Fallback a CDN remoto…";
+    $("log").textContent = "Falling back to remote CDN…";
     landmarker = await cargarDesdeOrigen(MEDIAPIPE_CDN);
-    $("log").textContent = "Modelo listo (vía fallback CDN).";
+    $("log").textContent = "Model ready (via CDN fallback).";
   }
 }
 
@@ -154,11 +154,11 @@ async function encender() {
     corriendo = true;
     $("btn-cal").disabled = false;
     $("btn-reset").disabled = false;
-    $("log").textContent = "Midiendo. El video no se guarda en ningún lado.";
+    $("log").textContent = "Measuring. The video is not stored anywhere.";
     requestAnimationFrame(bucle);
   } catch (e) {
     $("log").textContent = "Error: " + e.message +
-      " — abrí la app vía http://localhost:8080 (ejecutando run.bat), no mediante protocolo file://.";
+      " — open the app at http://localhost:8080 (run run.bat), not through the file:// protocol.";
     $("btn-start").disabled = false;
   }
 }
@@ -182,7 +182,7 @@ function bucle() {
       dibujarPuntos(pts);
     } else {
       ctx.clearRect(0, 0, overlay.width, overlay.height);
-      $("log").textContent = "No veo una cara. Acercate o mejorá la luz.";
+      $("log").textContent = "No face in view. Move closer or improve the light.";
     }
   }
 
@@ -202,14 +202,14 @@ function procesar(e, t) {
   if (calibrando) {
     valoresCal.push(e);
     const restan = Math.ceil((5000 - (t - tCal)) / 1000);
-    $("log").textContent = `Calibrando… mantené los ojos abiertos (${restan})`;
+    $("log").textContent = `Calibrating… keep your eyes open (${restan})`;
     if (t - tCal >= 5000) {
       valoresCal.sort((a, b) => a - b);
       const basal = valoresCal[Math.floor(valoresCal.length / 2)]; // mediana
       umbral = basal * CFG.FACTOR_CALIBRACION;
       calibrando = false;
       $("v-thr").textContent = umbral.toFixed(3);
-      $("log").textContent = `Listo. Apertura basal ${basal.toFixed(3)} · umbral ${umbral.toFixed(3)}`;
+      $("log").textContent = `Ready. Baseline aperture ${basal.toFixed(3)} · threshold ${umbral.toFixed(3)}`;
     }
   }
 
@@ -261,7 +261,7 @@ function procesar(e, t) {
   $("v-blinks").textContent = parpadeos.length;
   const est = $("estado");
   est.className = "estado " + (cerrado ? "cerrado" : "abierto");
-  est.textContent = cerrado ? "Ojo cerrado" : "Ojo abierto";
+  est.textContent = cerrado ? "Eye closed" : "Eye open";
 }
 
 // --- dibujo ----------------------------------------------------------------
@@ -321,7 +321,7 @@ $("btn-reset").addEventListener("click", () => {
   parpadeos = []; microsuenos = 0; muestras = []; historia = [];
   $("v-micro").textContent = "0";
   $("v-dur").textContent = "—";
-  $("log").textContent = "Conteo reiniciado.";
+  $("log").textContent = "Count reset.";
   enviarMetrica("blink_rate", 0);
   enviarMetrica("microsleep", 0);
   enviarMetrica("perclos", 0);

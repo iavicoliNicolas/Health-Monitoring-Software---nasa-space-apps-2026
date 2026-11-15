@@ -226,44 +226,44 @@
         landmarks[1] = { x: 0.50, y: 0.45, z: 0 };
 
         var sample = measure(landmarks);
-        if (!sample) throw new Error('la cara de prueba fue rechazada');
-        if (Math.abs(sample.cheek - 3) > 1e-9) throw new Error('pómulo esperado 3');
-        if (Math.abs(sample.jaw - 2) > 1e-9) throw new Error('mandíbula esperada 2');
-        if (Math.abs(sample.roundness - 0.8) > 1e-9) throw new Error('ancho/alto esperado 0.8');
+        if (!sample) throw new Error('the test face was rejected');
+        if (Math.abs(sample.cheek - 3) > 1e-9) throw new Error('expected cheek 3');
+        if (Math.abs(sample.jaw - 2) > 1e-9) throw new Error('expected jaw 2');
+        if (Math.abs(sample.roundness - 0.8) > 1e-9) throw new Error('expected width/height 0.8');
 
         landmarks[234] = { x: 0.10, y: 0.50, z: 0 };
-        if (measure(landmarks) !== null) throw new Error('un rostro girado no debe medirse');
+        if (measure(landmarks) !== null) throw new Error('a turned face must not be measured');
 
         var deltas = componentDeltas(
             { cheek: 3.15, jaw: 2.10, roundness: 0.84 },
             { cheek: 3, jaw: 2, roundness: 0.8 }
         );
         var drift = meanDelta(deltas);
-        if (Math.abs(drift - 5) > 1e-9) throw new Error('la deriva del 5% no cierra');
-        if (band(drift) !== 'warn') throw new Error('5% tiene que marcar deriva');
-        if (band(1.2) !== 'nominal' || band(7) !== 'crit') throw new Error('bandas incorrectas');
+        if (Math.abs(drift - 5) > 1e-9) throw new Error('the 5% drift does not close');
+        if (band(drift) !== 'warn') throw new Error('5% must be marked as drift');
+        if (band(1.2) !== 'nominal' || band(7) !== 'crit') throw new Error('bands are wrong');
 
         var frames = [];
         for (var n = 0; n < 8; n++) frames.push({ cheek: n + 1, jaw: 2, roundness: 0.8 });
         var mid = medianSample(frames);
-        if (!mid || Math.abs(mid.cheek - 4.5) > 1e-9) throw new Error('mediana incorrecta');
-        if (medianSample(frames.slice(0, 7)) !== null) throw new Error('hacen falta 8 frames');
+        if (!mid || Math.abs(mid.cheek - 4.5) > 1e-9) throw new Error('median is wrong');
+        if (medianSample(frames.slice(0, 7)) !== null) throw new Error('8 frames are required');
 
         var stored = applyCapture(emptyStore(), sample, new Date(2026, 0, 1, 12));
         if (stored.kind !== 'baseline' || stored.store.samples.length !== 0) {
-            throw new Error('la primera captura es el día 1');
+            throw new Error('the first capture is day 1');
         }
         var sameDay = applyCapture(stored.store, sample, new Date(2026, 0, 1, 18));
-        if (sameDay.kind !== 'same-day') throw new Error('el mismo día no entra en la serie');
+        if (sameDay.kind !== 'same-day') throw new Error('the same day does not enter the series');
         var later = applyCapture(stored.store, { cheek: 3.15, jaw: 2.1, roundness: 0.84 }, new Date(2026, 3, 1, 9));
-        if (later.kind !== 'saved' || later.store.samples.length !== 1) throw new Error('otro día se guarda');
+        if (later.kind !== 'saved' || later.store.samples.length !== 1) throw new Error('another day is saved');
         var points = series(later.store);
         if (points.length !== 1 || points[0].days !== 90 || Math.abs(points[0].delta - 5) > 1e-9) {
-            throw new Error('la serie no mide los 90 días');
+            throw new Error('the series does not span the 90 days');
         }
         var replaced = applyCapture(later.store, { cheek: 3.3, jaw: 2.2, roundness: 0.88 }, new Date(2026, 3, 1, 20));
         if (replaced.store.samples.length !== 1 || replaced.store.samples[0].cheek !== 3.3) {
-            throw new Error('una segunda captura del mismo día reemplaza la anterior');
+            throw new Error('a second capture on the same day replaces the previous one');
         }
     }
 

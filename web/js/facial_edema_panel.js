@@ -40,7 +40,7 @@
         try {
             edema.selfTest();
         } catch (err) {
-            statusEl.textContent = 'El cálculo de hinchazón falló su prueba interna: ' + err.message;
+            statusEl.textContent = 'The swelling calculation failed its internal test: ' + err.message;
             cameraBtn.disabled = true;
             return;
         }
@@ -84,16 +84,16 @@
 
         function renderStore() {
             if (!store.baseline) {
-                baselineEl.textContent = 'Día 1: sin fijar';
+                baselineEl.textContent = 'Day 1: not set';
                 daysEl.textContent = '';
-                captureBtn.textContent = 'FIJAR DÍA 1';
+                captureBtn.textContent = 'SET DAY 1';
             } else {
-                baselineEl.textContent = 'Día 1: ' + store.baseline.day;
+                baselineEl.textContent = 'Day 1: ' + store.baseline.day;
                 var last = store.samples[store.samples.length - 1];
                 daysEl.textContent = last
-                    ? edema.daysBetween(store.baseline.day, last.day) + ' días de deriva'
-                    : 'La serie empieza en la próxima captura, otro día';
-                captureBtn.textContent = 'GUARDAR HOY';
+                    ? edema.daysBetween(store.baseline.day, last.day) + ' days of drift'
+                    : 'The series starts on the next capture, on another day';
+                captureBtn.textContent = 'SAVE TODAY';
             }
 
             var points = edema.series(store);
@@ -118,7 +118,7 @@
                 var row = document.createElement('div');
                 row.className = 'edema-history-row';
                 var day = document.createElement('span');
-                day.textContent = point.day + ' · día ' + point.days;
+                day.textContent = point.day + ' · day ' + point.days;
                 var value = document.createElement('strong');
                 value.textContent = formatPct(point.delta);
                 value.className = edema.band(point.delta);
@@ -129,8 +129,8 @@
 
             if (!running) {
                 var latest = store.samples[store.samples.length - 1];
-                if (latest) paintReadout(latest, 'Última captura guardada vs día 1');
-                else paintReadout(null, store.baseline ? 'Línea base fijada' : 'Sin línea base');
+                if (latest) paintReadout(latest, 'Last saved capture vs day 1');
+                else paintReadout(null, store.baseline ? 'Baseline set' : 'No baseline');
             }
         }
 
@@ -139,12 +139,12 @@
             captureBtn.disabled = !live;
             if (!live) {
                 if (store.baseline) {
-                    paintReadout(null, 'Buscando un rostro de frente');
+                    paintReadout(null, 'Looking for a face, straight on');
                     deltaEl.textContent = '…';
                 }
                 return;
             }
-            paintReadout(live, store.baseline ? 'Lectura en vivo, todavía no guardada' : 'Lista para fijar el día 1');
+            paintReadout(live, store.baseline ? 'Live reading, not saved yet' : 'Ready to set day 1');
         }
 
         async function createLandmarkerFrom(sources) {
@@ -166,13 +166,13 @@
 
         async function ensureLandmarker() {
             if (landmarker) return landmarker;
-            setStatus('Cargando Face Landmarker local (modo offline)…');
+            setStatus('Loading local Face Landmarker (offline mode)…');
             try {
                 landmarker = await createLandmarkerFrom(LOCAL_SOURCES);
                 return landmarker;
             } catch (localErr) {
                 console.warn('[FacialEdema] Fallback a CDN remoto:', localErr);
-                setStatus('Cargando Face Landmarker (fallback CDN)…');
+                setStatus('Loading Face Landmarker (CDN fallback)…');
                 landmarker = await createLandmarkerFrom(CDN_SOURCES);
                 return landmarker;
             }
@@ -191,11 +191,11 @@
                 idle.hidden = true;
                 renderLive();
                 if (!edema.medianSample(buffer)) {
-                    setStatus('Mirá de frente, con el rostro en reposo y bien iluminado.');
+                    setStatus('Look straight ahead, face at rest and well lit.');
                 } else if (!store.baseline) {
-                    setStatus('Primera captura: queda como día 1. El video no se guarda.');
+                    setStatus('First capture: this becomes day 1. The video is not stored.');
                 } else {
-                    setStatus('La lectura en vivo no entra en la serie hasta guardar el día.');
+                    setStatus('The live reading does not enter the series until the day is saved.');
                 }
             }
             raf = requestAnimationFrame(tick);
@@ -211,7 +211,7 @@
             }
             video.srcObject = null;
             idle.hidden = false;
-            cameraBtn.textContent = 'ACTIVAR CÁMARA';
+            cameraBtn.textContent = 'START CAMERA';
             captureBtn.disabled = true;
             renderStore();
         }
@@ -229,18 +229,18 @@
                 await video.play();
                 running = true;
                 buffer = [];
-                cameraBtn.textContent = 'DETENER CÁMARA';
+                cameraBtn.textContent = 'STOP CAMERA';
                 captureBtn.disabled = true;
-                setStatus('Cámara local activa. Ningún frame sale de esta máquina.');
+                setStatus('Local camera on. No frame leaves this machine.');
                 raf = requestAnimationFrame(tick);
             } catch (err) {
                 stopCamera();
                 if (err && err.name === 'NotAllowedError') {
-                    setStatus('El navegador bloqueó la cámara. Habilitala para este archivo.');
+                    setStatus('The browser blocked the camera. Allow it for this page.');
                 } else if (err && err.name === 'NotFoundError') {
-                    setStatus('No hay una cámara disponible.');
+                    setStatus('No camera is available.');
                 } else {
-                    setStatus('No se pudo abrir la cámara o el modelo. Abrí el cockpit desde http://localhost:8080/web/index.html (run.bat).');
+                    setStatus('Could not open the camera or the model. Open the cockpit from http://localhost:8080/web/index.html (run.bat).');
                 }
             } finally {
                 starting = false;
@@ -257,27 +257,27 @@
             if (!sample) return;
             var result = edema.applyCapture(store, sample, new Date());
             if (result.kind === 'same-day') {
-                setStatus('El día 1 ya está fijado hoy. La próxima captura, otro día, entra en la serie.');
+                setStatus('Day 1 is already set today. The next capture, on another day, enters the series.');
                 return;
             }
             store = result.store;
             edema.saveStore(store);
             renderStore();
             if (result.kind === 'baseline') {
-                setStatus('Día 1 guardado. Solo quedaron tres índices en este navegador.');
+                setStatus('Day 1 saved. Only three indexes remain in this browser.');
             } else {
                 var last = store.samples[store.samples.length - 1];
                 var drift = edema.meanDelta(edema.componentDeltas(last, store.baseline));
-                setStatus('Captura del ' + last.day + ' guardada: ' + formatPct(drift) + ' contra el día 1.');
+                setStatus('Capture for ' + last.day + ' saved: ' + formatPct(drift) + ' versus day 1.');
             }
         });
 
         resetBtn.addEventListener('click', function () {
             if (!store.baseline && !store.samples.length) return;
-            if (!window.confirm('¿Borrar el día 1 y toda la serie de hinchazón en esta máquina?')) return;
+            if (!window.confirm('Delete day 1 and the whole swelling series on this machine?')) return;
             store = edema.clearStore();
             renderStore();
-            setStatus('Línea base borrada. La próxima captura vuelve a ser el día 1.');
+            setStatus('Baseline cleared. The next capture becomes day 1 again.');
         });
 
         document.addEventListener('visibilitychange', function () {

@@ -64,7 +64,7 @@ async function construir() {
           <span class="vital-num">${SIN_DATO}</span>
           <span class="vital-unidad">${v.unidad}</span>
         </div>
-        <div class="vital-rango">Referencia ${v.rango}</div>
+        <div class="vital-rango">Reference ${v.rango}</div>
       </div>
     </article>`).join('');
 
@@ -82,14 +82,14 @@ async function construir() {
    de umbrales, todo sale de data/metricas.json.
    ======================================================================== */
 function textoUmbral(m) {
-  if (m.critico) return `Crítico: ${m.critico.op}${m.critico.valor} ${m.unidad}`.trim();
-  if (m.alerta)  return `Alerta: ${m.alerta.op}${m.alerta.valor} ${m.unidad}`.trim();
-  return 'Sin umbral definido';
+  if (m.critico) return `Critical: ${m.critico.op}${m.critico.valor} ${m.unidad}`.trim();
+  if (m.alerta)  return `Alert: ${m.alerta.op}${m.alerta.valor} ${m.unidad}`.trim();
+  return 'No threshold defined';
 }
 
 function construirMatriz() {
   $('leyenda').innerHTML =
-    '<span class="leyenda-item leyenda-titulo">Nivel de evidencia</span>' +
+    '<span class="leyenda-item leyenda-titulo">Evidence level</span>' +
     Object.entries(config._niveles).map(([k, v]) =>
       `<span class="leyenda-item"><span class="ev ev-${k.toLowerCase()}">${k}</span>${v}</span>`
     ).join('');
@@ -137,7 +137,7 @@ function pintarCelda(campo, valor) {
   if (valor === null || valor === undefined) {
     nodo.classList.add('sin-dato');
     nodo.querySelector('.celda-valor').textContent = SIN_DATO;
-    nodo.querySelector('.celda-umbral').textContent = 'SIN MEDICIÓN';
+    nodo.querySelector('.celda-umbral').textContent = 'NO READING';
     if (barra) barra.style.width = '0%';
     if (def.zona) pintarZona(campo, 'sin-dato');
     return;
@@ -173,9 +173,9 @@ function actualizarEstadoPilares() {
 
     const estado = crit ? 'critico' : alert ? 'alerta'
                  : sinDato === g.metricas.length ? 'sin-dato' : 'ok';
-    const texto  = crit  ? `${crit} crítico${crit > 1 ? 's' : ''}`
-                 : alert ? `${alert} en alerta`
-                 : estado === 'sin-dato' ? 'Sin medición'
+    const texto  = crit  ? `${crit} critical`
+                 : alert ? `${alert} on alert`
+                 : estado === 'sin-dato' ? 'No reading'
                  : 'Nominal';
 
     el.className = 'pilar-estado ' + estado;
@@ -255,14 +255,14 @@ function pintarVital(campo, valor, textoForzado) {
   if (valor === null) {
     nodo.classList.add('sin-dato');
     nodo.querySelector('.vital-num').textContent = SIN_DATO;
-    nodo.querySelector('.vital-rango').textContent = 'Sin medición';
+    nodo.querySelector('.vital-rango').textContent = 'No reading';
     if (def.zona) pintarZona(campo, 'sin-dato');
     return;
   }
 
   nodo.querySelector('.vital-num').textContent =
     textoForzado ?? valor.toFixed(def.decimales ?? 0);
-  nodo.querySelector('.vital-rango').textContent = `Referencia ${def.rango}`;
+  nodo.querySelector('.vital-rango').textContent = `Reference ${def.rango}`;
 
   if (cruza(valor, def.critico))     nodo.classList.add('critico');
   else if (cruza(valor, def.alerta)) nodo.classList.add('alerta');
@@ -282,7 +282,7 @@ function pintarPuntaje(valor) {
   if (valor === null) {
     num.textContent = '--';
     num.style.color = 'var(--sin-dato)';
-    est.textContent = 'sin medición';
+    est.textContent = 'no reading';
     aro.style.stroke = 'var(--sin-dato)';
     aro.style.strokeDashoffset = CIRC;
     return;
@@ -292,8 +292,8 @@ function pintarPuntaje(valor) {
               : valor >= 50 ? 'var(--alerta)'
               :               'var(--critico)';
   const texto = valor >= 80 ? 'nominal'
-              : valor >= 50 ? 'degradado'
-              :               'crítico';
+              : valor >= 50 ? 'degraded'
+              :               'critical';
 
   num.textContent = valor;
   num.style.color = color;
@@ -315,7 +315,7 @@ function todoSinMedicion(motivo) {
   zonas.forEach(z => pintarZona(z.campo, 'sin-dato'));
   pintarPuntaje(null);
   $('detalle').classList.add('oculto');
-  if (motivo) console.warn('[VitalGrid] Sin medición:', motivo);
+  if (motivo) console.warn('[VitalGrid] No reading:', motivo);
 }
 
 /* ===== Aplicar un payload ================================================
@@ -388,12 +388,12 @@ document.querySelectorAll('.riel-btn').forEach(btn => {
 
 /* ===== Arranque ========================================================== */
 construir()
-  .then(() => todoSinMedicion('todavía no llegó telemetría'))
+  .then(() => todoSinMedicion('telemetry has not arrived yet'))
   .catch(err => {
-    console.error('[VitalGrid] No pude leer data/metricas.json', err);
+    console.error('[VitalGrid] Could not read data/metricas.json', err);
     document.body.insertAdjacentHTML('afterbegin',
-      '<p style="padding:14px;color:#e0455b">No pude leer <code>data/metricas.json</code>. ' +
-      'Abrí la página con un servidor local, no con doble clic.</p>');
+      '<p style="padding:14px;color:#e0455b">Could not read <code>data/metricas.json</code>. ' +
+      'Open the page from a local server, not by double-clicking.</p>');
   });
 
 })();

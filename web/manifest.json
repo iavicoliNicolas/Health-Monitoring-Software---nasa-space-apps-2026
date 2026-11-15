@@ -1,8 +1,8 @@
 {
-  "name": "Z.E.U.S · Monitoreo autónomo de salud",
+  "name": "Z.E.U.S · Autonomous health monitoring",
   "short_name": "Z.E.U.S",
-  "description": "Cockpit de telemetría biomédica para tránsito a Marte. Operación médica sin apoyo de la Tierra.",
-  "lang": "es",
+  "description": "Biomedical telemetry cockpit for Mars transit. Medical operations without support from Earth.",
+  "lang": "en",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

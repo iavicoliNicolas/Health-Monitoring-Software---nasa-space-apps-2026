@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prototipo · detección de fatiga ocular</title>
+<title>Prototype · ocular fatigue detection</title>
 <style>
   :root{
     --bg:#0a1017; --panel:#121b24; --line:#1f2d39;
@@ -54,8 +54,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Detección de fatiga ocular</h1>
-  <p class="sub">MediaPipe Face Landmarker · prototipo para VitalGrid · tarea 12</p>
+  <h1>Ocular fatigue detection</h1>
+  <p class="sub">MediaPipe Face Landmarker · prototype for VitalGrid · task 12</p>
 
   <div class="grid">
     <div class="card">
@@ -64,37 +64,37 @@
         <canvas id="overlay"></canvas>
       </div>
       <div class="btns">
-        <button id="btn-start">Encender cámara</button>
-        <button id="btn-cal" disabled>Calibrar (5 s con ojos abiertos)</button>
-        <button id="btn-reset" disabled>Reiniciar conteo</button>
+        <button id="btn-start">Turn camera on</button>
+        <button id="btn-cal" disabled>Calibrate (5 s with eyes open)</button>
+        <button id="btn-reset" disabled>Reset count</button>
       </div>
-      <div id="log">Esperando…</div>
+      <div id="log">Waiting…</div>
     </div>
 
     <div class="card">
       <div class="estado abierto" id="estado">—</div>
-      <div class="m"><span>Apertura (EAR)</span><b id="v-ear">—</b></div>
-      <div class="m"><span>Umbral de cierre</span><b id="v-thr">0.120</b></div>
-      <div class="m"><span>Parpadeos / min</span><b id="v-rate">0</b></div>
+      <div class="m"><span>Aperture (EAR)</span><b id="v-ear">—</b></div>
+      <div class="m"><span>Closure threshold</span><b id="v-thr">0.120</b></div>
+      <div class="m"><span>Blinks / min</span><b id="v-rate">0</b></div>
       <div class="m"><span>PERCLOS</span><b id="v-perclos">0.0 %</b></div>
-      <div class="m"><span>Microsueños</span><b id="v-micro">0</b></div>
-      <div class="m"><span>Parpadeos totales</span><b id="v-blinks">0</b></div>
-      <div class="m"><span>Último cierre</span><b id="v-dur">—</b></div>
-      <div class="m"><span>Cuadros por segundo</span><b id="v-fps">—</b></div>
-      <div class="m"><span>Enlace VitalGrid (ws:9002)</span><b id="v-ws" style="color:var(--warn)">DESCONECTADO</b></div>
+      <div class="m"><span>Microsleeps</span><b id="v-micro">0</b></div>
+      <div class="m"><span>Total blinks</span><b id="v-blinks">0</b></div>
+      <div class="m"><span>Last closure</span><b id="v-dur">—</b></div>
+      <div class="m"><span>Frames per second</span><b id="v-fps">—</b></div>
+      <div class="m"><span>VitalGrid link (ws:9002)</span><b id="v-ws" style="color:var(--warn)">DISCONNECTED</b></div>
     </div>
   </div>
 
   <div class="card" style="margin-top:16px">
-    <h2>Curva de apertura</h2>
+    <h2>Aperture curve</h2>
     <canvas id="curva"></canvas>
   </div>
 
   <div class="aviso">
-    <b>Las cuatro constantes de <code>camara.js</code> son provisionales.</b>
-    El umbral de cierre, la duración máxima de un parpadeo, el mínimo de un microsueño y la ventana
-    de PERCLOS están puestos a ojo y marcados en el código. Reemplazalos con los valores del
-    oftalmólogo y anotá la fuente al lado.
+    <b>The four constants in <code>camara.js</code> are provisional.</b>
+    The closure threshold, the maximum blink duration, the microsleep minimum, and the PERCLOS
+    window are set by eye and marked in the code. Replace them with the ophthalmologist's values
+    and note the source beside each one.
   </div>
 </div>
 
