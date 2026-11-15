@@ -81,6 +81,9 @@ function alActualizar(d) {
 
   $('vFps').textContent = d.fps;
 
+  // Edema facial (Pómulos, Mandíbula, Ancho/alto vs Día 1)
+  actualizarEdemaEnVivo(d.edemaMedian || d.edemaSample);
+
   // El cockpit también muestra estas tres en la matriz RIDGE; se las pasamos
   // por si la parte 7 todavía no está conectada al daemon.
   window.VitalGrid?.desdeCamara?.({
@@ -89,6 +92,69 @@ function alActualizar(d) {
     microsuenos: d.microsuenos
   });
 }
+
+/* --- Edema facial (facial_edema.js) -------------------------------------- */
+const Edema = window.FacialEdema || null;
+let edemaStore = Edema ? Edema.loadStore() : { baseline: null, samples: [] };
+let ultimaMuestraEdema = null;
+
+function fmtPct(v) {
+  return (v > 0 ? '+' : '') + v.toFixed(1) + ' %';
+}
+
+function pintarEstadoBaseline() {
+  if (!$('vDia1')) return;
+  if (edemaStore && edemaStore.baseline) {
+    $('vDia1').textContent = `set (${edemaStore.baseline.day})`;
+    if ($('btnFijarDia1')) $('btnFijarDia1').textContent = 'Update day 1';
+  } else {
+    $('vDia1').textContent = 'not set';
+    if ($('btnFijarDia1')) $('btnFijarDia1').textContent = 'Set day 1';
+  }
+}
+
+function actualizarEdemaEnVivo(sample) {
+  if (!Edema || !sample) return;
+  ultimaMuestraEdema = sample;
+
+  if (edemaStore && edemaStore.baseline) {
+    const deltas = Edema.componentDeltas(sample, edemaStore.baseline);
+    if (deltas) {
+      $('vPomulos').textContent   = fmtPct(deltas.cheek);
+      $('vMandibula').textContent = fmtPct(deltas.jaw);
+      $('vRatio').textContent     = `${sample.roundness.toFixed(2)} (${fmtPct(deltas.roundness)})`;
+      return;
+    }
+  }
+
+  // Sin día 1 fijado aún: mostrar índices geométricos actuales listos para fijar
+  $('vPomulos').textContent   = `${sample.cheek.toFixed(2)}x (no base)`;
+  $('vMandibula').textContent = `${sample.jaw.toFixed(2)}x (no base)`;
+  $('vRatio').textContent     = sample.roundness.toFixed(2);
+}
+
+function fijarDia1Edema() {
+  if (!Edema) return;
+  if (!ultimaMuestraEdema) {
+    $('camLog').textContent = 'Look straight at the camera to set day 1 baseline…';
+    return;
+  }
+  const ahora = new Date();
+  const stamped = {
+    cheek: ultimaMuestraEdema.cheek,
+    jaw: ultimaMuestraEdema.jaw,
+    roundness: ultimaMuestraEdema.roundness,
+    savedAt: ahora.toISOString(),
+    day: Edema.dayKey(ahora)
+  };
+  edemaStore = { baseline: stamped, samples: edemaStore.samples || [] };
+  Edema.saveStore(edemaStore);
+  pintarEstadoBaseline();
+  actualizarEdemaEnVivo(ultimaMuestraEdema);
+  $('camLog').textContent = `Facial edema baseline (Day 1) set: ${stamped.day}.`;
+}
+
+pintarEstadoBaseline();
 
 /* --- Avisos de estado ----------------------------------------------------- */
 function alAviso(a) {
@@ -102,8 +168,9 @@ function alAviso(a) {
   if (a.camara === 'encendida') {
     encendida = true;
     $('camOff').hidden = true;
-    estadoCamara('encendida', 'Camera on');
-    botonApagar();
+    const etiqueta = a.modo === 'backup' ? 'Video Backup active' : 'Camera on';
+    estadoCamara('encendida', etiqueta);
+    botonApagar(a.modo === 'backup');
     $('btnCalibrar').disabled = false;
     $('btnReiniciar').disabled = false;
     $('btnFijarDia1').disabled = false;
@@ -111,6 +178,7 @@ function alAviso(a) {
 
   if (a.camara === 'apagada') {
     encendida = false;
+    ultimaMuestraEdema = null;
     $('camOff').hidden = false;
     estadoCamara('apagada', 'Camera off');
     botonEncender();
@@ -118,7 +186,7 @@ function alAviso(a) {
     $('btnReiniciar').disabled = true;
     $('btnFijarDia1').disabled = true;
     // Las métricas de la cámara dejan de ser actuales: a SIN MEDICIÓN.
-    ['vEar', 'vParpadeos', 'vDuracion', 'vFps'].forEach(id => $(id).textContent = '—');
+    ['vEar', 'vParpadeos', 'vDuracion', 'vFps', 'vPomulos', 'vMandibula', 'vRatio'].forEach(id => $(id).textContent = '—');
     $('dPerclos').querySelector('b').textContent = '—';
     $('dMicro').querySelector('b').textContent = '—';
     $('dPerclos').className = 'destacado';
@@ -147,9 +215,9 @@ function botonEncender() {
   b.disabled = false;
 }
 
-function botonApagar() {
+function botonApagar(esBackup = false) {
   const b = $('btnEncender');
-  b.textContent = 'Turn off';
+  b.textContent = esBackup ? 'Stop' : 'Turn off';
   b.className = 'btn btn-sec';
   b.disabled = false;
 }
@@ -178,6 +246,25 @@ $('btnEncender').addEventListener('click', () => {
   $('camLog').textContent = 'Requesting camera permission…';
   Camara.encender();
 });
+
+if ($('btnVideoBackup') && $('inputVideoBackup')) {
+  $('btnVideoBackup').addEventListener('click', () => {
+    $('inputVideoBackup').value = '';
+    $('inputVideoBackup').click();
+  });
+  $('inputVideoBackup').addEventListener('change', (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    if (file) {
+      $('camLog').textContent = `Loading backup video: ${file.name}…`;
+      Camara.encenderConArchivo(file);
+    }
+  });
+}
+
+if ($('btnFijarDia1')) {
+  $('btnFijarDia1').addEventListener('click', fijarDia1Edema);
+}
+
 $('btnCalibrar').addEventListener('click', () => Camara.calibrar());
 $('btnReiniciar').addEventListener('click', () => {
   Camara.reiniciar();

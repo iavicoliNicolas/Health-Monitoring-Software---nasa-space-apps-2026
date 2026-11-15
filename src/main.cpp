@@ -89,6 +89,7 @@ int main(int argc, char* argv[]) {
     state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 3.2;
     state.telemetry_ridge.E_environment.spo2_pct = 94;
     state.telemetry_ridge.E_environment.body_temperature_c = 37.9;
+    state.telemetry_ridge.E_environment.respiratory_rate_bpm = 16.0;
 
     // Wire SOMA broadcast to WebSocket BEFORE starting watchdog/server threads
     soma_watchdog.set_broadcast_callback([&ws_server](const std::string& soma_json) {
@@ -151,6 +152,10 @@ int main(int argc, char* argv[]) {
                         state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = std::stod(val_str);
                         std::cout << "[PERIPHERAL INGESTION] Environment.cabin_ppco2_mmHg updated to "
                                   << state.telemetry_ridge.E_environment.cabin_ppco2_mmHg << " mmHg" << std::endl;
+                    } else if (metric == "respiratory_rate_bpm") {
+                        state.telemetry_ridge.E_environment.respiratory_rate_bpm = std::stod(val_str);
+                        std::cout << "[PERIPHERAL INGESTION] Environment.respiratory_rate_bpm updated to "
+                                  << state.telemetry_ridge.E_environment.respiratory_rate_bpm << " rpm" << std::endl;
                     } else if (metric == "acute_event_mSv") {
                         state.telemetry_ridge.R_radiation.acute_event_mSv = std::stod(val_str);
                         std::cout << "[PERIPHERAL INGESTION] Radiation.acute_event_mSv updated to "
@@ -196,6 +201,7 @@ int main(int argc, char* argv[]) {
             state.telemetry_ridge.G_gravity.blood_pressure_sys = 0;
             state.telemetry_ridge.G_gravity.blood_pressure_dia = 0;
             state.telemetry_ridge.E_environment.spo2_pct = 0;
+            state.telemetry_ridge.E_environment.respiratory_rate_bpm = 0.0;
         } else if (msg == "RESET_SURVIVAL") {
             state.survival_status.vital_signs_present = true;
             state.survival_status.sos_panic_button_active = false;
@@ -250,6 +256,7 @@ int main(int argc, char* argv[]) {
             state.telemetry_ridge.E_environment.cabin_ppco2_mmHg = 2.1;
             state.telemetry_ridge.E_environment.spo2_pct = 98;
             state.telemetry_ridge.E_environment.body_temperature_c = 36.8;
+            state.telemetry_ridge.E_environment.respiratory_rate_bpm = 16.0;
             soma_watchdog.reset_soma();
         }
     });

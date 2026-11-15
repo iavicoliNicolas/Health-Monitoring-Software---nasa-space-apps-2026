@@ -355,7 +355,143 @@ function aplicar(p) {
   // El trazado sigue la frecuencia medida. Sin dato, línea plana gris.
   ECG.bpm(porRuta(p, 'telemetry_ridge.G_gravity.heart_rate_bpm'));
 }
-window.VitalGrid = { aplicar, todoSinMedicion };   // para probar desde la consola
+
+/* ===== Fallback local de Cámara cuando el daemon C++ no está activo ====== */
+function desdeCamara(metricas) {
+  if (!metricas || wsConectado || !config) return;
+  const campos = ['parpadeos_min', 'perclos_pct', 'microsuenos'];
+  campos.forEach(campo => {
+    if (!(campo in metricas)) return;
+    const v = leer(metricas[campo]);
+    crudos[campo] = v;
+    const def = celdas.get(campo)?.def;
+    ultimos[campo] = v === null ? null : v.toFixed(def?.decimales ?? 0);
+    pintarCelda(campo, v);
+  });
+  actualizarEstadoPilares();
+}
+
+/* ===== Asistente de Voz Clínico Offline en Inglés (Flight Surgeon AI) ==== */
+let voiceAdvisorEnabled = true;
+const spokenAlerts = new Set();
+let activeTickAlertKeys = new Set();
+let somaSpoken = false;
+
+const ENGLISH_CLINICAL_BRIEFINGS = {
+  acute_event_mSv:
+    'Critical solar radiation alert. Acute radiation exposure detected. Decision guidance: if cabin carbon dioxide is elevated, purge the air scrubber and carry lithium hydroxide canisters before sealing the storm shelter hatch. Protocol: evacuate to the water-shielded storm shelter and administer Filgrastim 300 micrograms subcutaneously.',
+  career_accumulated_mSv:
+    'Critical radiation alert. Career ionizing radiation limit exceeded. Decision guidance: permanently suspend all extravehicular activities and relocate crew member to high-shielding habitat quarters.',
+  blood_pressure:
+    'Critical cardiovascular alert. Hypertensive crisis in microgravity detected. Decision guidance: halt all exercise immediately and secure the astronaut in a resting position. Protocol: administer sublingual Captopril 25 milligrams and recheck blood pressure in 10 minutes.',
+  heart_rate_bpm:
+    'Critical tachycardia alert. Elevated heart rate detected. Decision guidance: check cabin oxygen and carbon dioxide first; if hypoxia or hypercapnia is present, do not administer beta blockers. Otherwise perform a modified Valsalva maneuver, hydrate, and prepare intravenous Metoprolol 5 milligrams if persistent.',
+  onsd_mm:
+    'Critical neuro-ocular alert. Spaceflight Associated Neuro-ocular Syndrome with elevated intracranial pressure detected. Decision guidance: deploy Lower Body Negative Pressure at minus 35 millimeters of mercury for two hours and administer oral Acetazolamide 250 milligrams.',
+  blood_sugar_mg_dl:
+    'Metabolic alert on capillary blood glucose. Decision guidance: for hypoglycemia below 65, administer 15 to 20 grams of fast-acting oral glucose gel or intramuscular Glucagon 1 milligram. For hyperglycemia above 140, hydrate with 500 milliliters of water and perform 30 minutes of aerobic cycling.',
+  cabin_ppco2_mmHg:
+    'Critical environmental alert. Cabin hypercapnia detected. Decision guidance: cycle the Carbon Dioxide Removal Assembly to rapid emergency desorption, don oxygen masks, and activate backup lithium hydroxide canisters.',
+  spo2_pct:
+    'Critical hypoxemia alert. Blood oxygen saturation below 95 percent. Decision guidance: supply 100 percent oxygen via aviator mask at 6 liters per minute immediately and inspect cabin pressure sensors.',
+  body_temperature_c:
+    'Critical hyperthermia alert. Space fever detected above 38.5 degrees Celsius. Decision guidance: activate the Liquid Cooling and Ventilation Garment, infuse intravenous Acetaminophen 1000 milligrams, and draw blood for sepsis analysis.',
+  respiratory_rate_bpm:
+    'Respiratory rate alert detected. Decision guidance: if bradypnea below 10 breaths per minute, secure the airway, initiate 100 percent bag-valve-mask ventilation, and prepare Naloxone 0.4 milligrams. If tachypnea above 24 breaths per minute, verify local airflow for carbon dioxide pockets and guide slow diaphragmatic breathing.',
+  sleep_hours_last_24h:
+    'Cognitive fatigue warning. Chronic sleep debt detected below 6 hours. Decision guidance: prescribe a mandatory 60-minute restorative rest block under warm circadian lighting and suspend critical robotic operations.',
+  hrv_rmssd_drop_pct:
+    'Autonomic stress warning. Heart rate variability drop exceeds 25 percent. Decision guidance: initiate 15 minutes of guided resonant breathing biofeedback at 0.1 Hertz and reduce workstation sensory load.',
+  blink_rate_per_min:
+    'Ocular fatigue warning. Spontaneous blink rate has dropped below 8 blinks per minute. Decision guidance: apply the 20-20-20 visual rest protocol and administer lubricating ophthalmic drops.',
+  microsleep_events:
+    'Critical drowsiness warning. Involuntary microsleep episode detected by ocular tracker. Decision guidance: relieve the astronaut from active flight controls immediately and initiate mandatory rest.',
+  crew_mood_discrepancy:
+    'Behavioral discrepancy warning. Objective biometric and ocular sensors indicate fatigue despite an optimal self-report. Decision guidance: mitigate operational overconfidence, perform a 3-minute Psychomotor Vigilance Task, and reschedule critical maneuvers.',
+  SENSOR_ARTIFACT_REJECTED:
+    'Sensor coherence warning. Physically impossible transducer reading rejected by anti-hallucination guardrail. Decision guidance: do not administer medication; inspect and reattach chest electrodes, pulse oximeter, and thermistor.'
+};
+
+function selectEnglishVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  return (
+    voices.find(v => v.lang === 'en-US' && /natural|google|microsoft|samantha|aria|guy/i.test(v.name)) ||
+    voices.find(v => v.lang === 'en-US') ||
+    voices.find(v => /^en(-|_)/i.test(v.lang)) ||
+    null
+  );
+}
+
+function speak(texto) {
+  if (!voiceAdvisorEnabled || !texto || !('speechSynthesis' in window)) return false;
+  try {
+    const utter = new SpeechSynthesisUtterance(String(texto));
+    utter.lang = 'en-US';
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    const v = selectEnglishVoice();
+    if (v) utter.voice = v;
+    window.speechSynthesis.speak(utter);
+    return true;
+  } catch (err) {
+    console.warn('[VitalGrid] speechSynthesis error:', err);
+    return false;
+  }
+}
+
+function buildAlertSpeechEnglish(alert) {
+  if (!alert) return '';
+  const metric = alert.trigger_metric || 'unknown_metric';
+  if (ENGLISH_CLINICAL_BRIEFINGS[metric]) {
+    return `Flight Surgeon AI ${alert.status || 'ALERT'}. ${ENGLISH_CLINICAL_BRIEFINGS[metric]}`;
+  }
+  return `Flight Surgeon AI ${alert.status || 'ALERT'} on ${metric}. Diagnosis: ${alert.diagnosis || ''}. Tactical action: ${alert.tactical_action || ''}`;
+}
+
+function configurarBotonVoiceAdvisor() {
+  const btn = $('btnVoiceAdvisor');
+  const lbl = $('etiquetaVoiceAdvisor');
+  if (!btn || !lbl) return;
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
+  btn.addEventListener('click', () => {
+    voiceAdvisorEnabled = !voiceAdvisorEnabled;
+    btn.classList.toggle('conectado', voiceAdvisorEnabled);
+    btn.classList.toggle('desconectado', !voiceAdvisorEnabled);
+    lbl.textContent = voiceAdvisorEnabled ? '🔊 Voice Advisor: ON' : '🔇 Voice Advisor: OFF';
+    if (!voiceAdvisorEnabled && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    } else if (voiceAdvisorEnabled) {
+      speak('Flight Surgeon voice advisor online.');
+    }
+  });
+}
+
+window.addEventListener('vitalgrid:alert', (ev) => {
+  const alert = ev.detail;
+  if (!alert || (alert.status !== 'CRITICAL' && alert.status !== 'WARNING')) return;
+  const key = `${alert.status}:${alert.trigger_metric}`;
+  activeTickAlertKeys.add(key);
+  if (!spokenAlerts.has(key)) {
+    spokenAlerts.add(key);
+    speak(buildAlertSpeechEnglish(alert));
+  }
+});
+
+window.addEventListener('vitalgrid:soma', () => {
+  if (!somaSpoken) {
+    somaSpoken = true;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speak(
+      'Emergency alert. SOMA Watchdog activated. Crew vital signs or cabin survival compromised. Initiating scientific preservation protocol, biological cryostallization container lock, and encrypted DSOC deep-space optical laser transmission to Earth.'
+    );
+  }
+});
 
 /* ===== Reloj de misión (MET) ============================================= */
 let seg = 42 * 86400 + 18 * 3600 + 27 * 60;   // lo pisa el perfil si trae día
@@ -437,11 +573,108 @@ document.querySelectorAll('.riel-btn').forEach(btn => {
   });
 });
 
+/* ===== Bus de Eventos Global y WebSocket Único =========================== */
+const WS_URL = 'ws://127.0.0.1:9002';
+let wsActiva = null;
+let wsConectado = false;
+let timerLimpiezaAlertas = null;
+
+function setEstadoConexion(conectado) {
+  wsConectado = conectado;
+  const pastilla = $('pastillaConexion');
+  const etiqueta = $('etiquetaConexion');
+  if (pastilla && etiqueta) {
+    pastilla.classList.toggle('conectado', conectado);
+    pastilla.classList.toggle('desconectado', !conectado);
+    etiqueta.textContent = conectado ? 'Online' : 'Disconnected';
+  }
+  window.dispatchEvent(new CustomEvent('vitalgrid:connection', {
+    detail: { connected: conectado }
+  }));
+}
+
+function enviar(payload) {
+  if (!wsActiva || wsActiva.readyState !== WebSocket.OPEN) return false;
+  const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  if (msg === 'RESET_NOMINAL' || msg === 'RESET_SURVIVAL') {
+    spokenAlerts.clear();
+    somaSpoken = false;
+  }
+  wsActiva.send(msg);
+  return true;
+}
+
+function conectarTelemetry() {
+  try {
+    wsActiva = new WebSocket(WS_URL);
+  } catch {
+    setEstadoConexion(false);
+    setTimeout(conectarTelemetry, 2000);
+    return;
+  }
+
+  wsActiva.onopen = () => {
+    setEstadoConexion(true);
+  };
+
+  wsActiva.onmessage = (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      if (!data) return;
+
+      if (data.telemetry_ridge) {
+        activeTickAlertKeys = new Set();
+        aplicar(data);
+        window.dispatchEvent(new CustomEvent('vitalgrid:telemetry', { detail: data }));
+
+        if (data.survival_status && data.survival_status.vital_signs_present &&
+            !data.survival_status.sos_panic_button_active &&
+            data.survival_status.cabin_pressure_nominal) {
+          somaSpoken = false;
+        }
+
+        // Al terminar el lote de alertas del tick (250 ms después), liberar del Set
+        // las alertas que ya volvieron a rango nominal para que puedan volver a anunciarse si se repiten.
+        clearTimeout(timerLimpiezaAlertas);
+        timerLimpiezaAlertas = setTimeout(() => {
+          for (const k of Array.from(spokenAlerts)) {
+            if (!activeTickAlertKeys.has(k)) spokenAlerts.delete(k);
+          }
+        }, 250);
+      } else if (data.type === 'CLINICAL_ALERT') {
+        window.dispatchEvent(new CustomEvent('vitalgrid:alert', { detail: data }));
+      } else if (data.type === 'SOMA_DSOC_EVENT') {
+        window.dispatchEvent(new CustomEvent('vitalgrid:soma', { detail: data }));
+      }
+    } catch (err) {
+      console.warn('[VitalGrid] Invalid WS message:', err);
+    }
+  };
+
+  wsActiva.onclose = () => {
+    wsActiva = null;
+    setEstadoConexion(false);
+    todoSinMedicion('daemon connection closed');
+    setTimeout(conectarTelemetry, 2000);
+  };
+
+  wsActiva.onerror = () => {
+    if (wsActiva) wsActiva.close();
+  };
+}
+
+window.VitalGrid = { aplicar, todoSinMedicion, enviar, desdeCamara, speak };
+
 /* ===== Arranque ========================================================== */
 cargarPerfil();
+configurarBotonVoiceAdvisor();
 
 construir()
-  .then(() => { todoSinMedicion('no telemetry received yet'); abrirVistaPedida(); })
+  .then(() => {
+    todoSinMedicion('no telemetry received yet');
+    abrirVistaPedida();
+    conectarTelemetry();
+  })
   .catch(err => {
     console.error('[VitalGrid] No pude leer data/metricas.json', err);
     document.body.insertAdjacentHTML('afterbegin',

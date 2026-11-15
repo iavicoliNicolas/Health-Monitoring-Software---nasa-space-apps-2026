@@ -45,6 +45,9 @@
         <p class="sub" id="lineaTripulante"></p>
       </div>
       <div class="cabecera-der">
+        <button type="button" class="conexion conectado" id="btnVoiceAdvisor" style="cursor:pointer;font-family:inherit" title="Toggle Autonomous Flight Surgeon English Voice Advisor">
+          <span id="etiquetaVoiceAdvisor">🔊 Voice Advisor: ON</span>
+        </button>
         <span class="met" id="reloj">MET +000:00:00:00</span>
         <span class="conexion desconectado" id="pastillaConexion">
           <span class="punto"></span><span id="etiquetaConexion">Disconnected</span>
@@ -145,8 +148,10 @@
 
           <div class="cam-btns">
             <button class="btn" id="btnEncender">Start</button>
+            <button class="btn btn-sec" id="btnVideoBackup" title="Load local video (.mp4/.webm) in loop">🎞️ Video Backup</button>
             <button class="btn btn-sec" id="btnCalibrar" disabled>Calibrate</button>
             <button class="btn btn-sec" id="btnReiniciar" disabled>Reset</button>
+            <input type="file" id="inputVideoBackup" accept="video/mp4,video/webm,video/*" hidden>
           </div>
 
           <!-- ===== Panel: PÁRPADOS ===== -->
@@ -196,7 +201,6 @@
             <p class="nota">
               In microgravity roughly 2 litres of fluid shift headward within the first
               6–10 hours, and periorbital swelling persists for the whole mission.
-              <b><code>facial_edema.js</code> still has to be ported from the previous repo.</b>
             </p>
           </div>
 
@@ -228,6 +232,7 @@
 </div>
 
 <script src="js/ecg.js"></script>
+<script src="js/facial_edema.js"></script>
 <script src="js/app.js"></script>
 <script type="module" src="js/panel-camara.js"></script>
 </body>

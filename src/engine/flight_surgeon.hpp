@@ -38,6 +38,8 @@ public:
     static constexpr double THRESHOLD_BODY_TEMP_CRITICAL_C = 38.5;
     static constexpr double THRESHOLD_BODY_TEMP_ARTIFACT_MIN_C = 20.0;
     static constexpr double THRESHOLD_BODY_TEMP_ARTIFACT_MAX_C = 45.0;
+    static constexpr double THRESHOLD_RESP_RATE_HIGH_WARN_BPM = 24.0;
+    static constexpr double THRESHOLD_RESP_RATE_LOW_CRIT_BPM = 10.0;
     static constexpr int    THRESHOLD_BLOOD_SUGAR_HIGH_WARN_MGDL = 140;
     static constexpr int    THRESHOLD_BLOOD_SUGAR_LOW_CRIT_MGDL = 65;
     static constexpr int    THRESHOLD_BLOOD_SUGAR_ARTIFACT_MAX_MGDL = 600;

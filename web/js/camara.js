@@ -13,7 +13,10 @@
 // ---------------------------------------------------------------------------
 
 import { FaceLandmarker, FilesetResolver }
-  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  from "../vendor/mediapipe/vision_bundle.mjs";
+
+const WASM_LOCAL_URL  = new URL("../vendor/mediapipe/wasm", import.meta.url).href;
+const MODEL_LOCAL_URL = new URL("../vendor/mediapipe/face_landmarker.task", import.meta.url).href;
 
 // === CONSTANTES A CONFIRMAR CON EL OFTALMÓLOGO =============================
 // Las cuatro están puestas a ojo. Cada una es una pregunta de la entrevista.
@@ -38,6 +41,8 @@ const OJOS = {
 let video = null, overlay = null, ctx = null;
 let landmarker = null;
 let corriendo = false;
+let modoBackup = false;
+let backupBlobUrl = null;
 let ultimoTs = -1, ultimoProcesado = 0;
 
 let umbral = CFG.UMBRAL_CERRADO;
@@ -46,28 +51,25 @@ let parpadeos = [];     // timestamps, para la frecuencia por minuto
 let microsuenos = 0;
 let muestras = [];      // { t, cerrado } dentro de la ventana de PERCLOS
 let historia = [];      // EAR reciente, sólo para dibujar la curva
+let muestrasEdema = []; // muestras recientes de geometría facial para mediana
 let calibrando = false, tCal = 0, valoresCal = [];
 let fpsT = performance.now(), fpsN = 0, fps = 0;
 
 let alActualizar = () => {};
 let alAvisar = () => {};
 
-// --- WebSocket al daemon C++ -----------------------------------------------
-let ws = null, ultimoEnvioTelemetria = 0;
+// --- Enlace con el bus WebSocket único de app.js ---------------------------
+let ultimoEnvioTelemetria = 0;
 
-function conectarWebSocket() {
-  try {
-    ws = new WebSocket(CFG.WS_URL);
-    ws.onopen  = () => alAvisar({ enlace: 'conectado' });
-    ws.onclose = () => { alAvisar({ enlace: 'reconectando' }); setTimeout(conectarWebSocket, 2000); };
-    ws.onerror = () => ws.close();
-  } catch {
-    setTimeout(conectarWebSocket, 2000);
-  }
+function vincularBusEventos() {
+  window.addEventListener("vitalgrid:connection", (ev) => {
+    const conectado = Boolean(ev.detail && ev.detail.connected);
+    alAvisar({ enlace: conectado ? "conectado" : "reconectando" });
+  });
 }
 
 function enviarMetrica(metric, value) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ metric, value }));
+  window.VitalGrid?.enviar?.({ metric, value });
 }
 
 // --- utilidades ------------------------------------------------------------
@@ -82,49 +84,104 @@ function ear(pts, ojo) {
   return vertical / (2 * ancho);
 }
 
-// --- arranque --------------------------------------------------------------
+// --- arranque (100% OFFLINE desde web/vendor/mediapipe) --------------------
 async function cargarModelo() {
-  alAvisar({ log: 'Loading model…' });
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-  );
-  landmarker = await FaceLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-      delegate: "GPU"
-    },
-    runningMode: "VIDEO",
-    numFaces: 1
-  });
-  alAvisar({ log: 'Model ready.' });
+  alAvisar({ log: 'Loading offline MediaPipe model…' });
+  const vision = await FilesetResolver.forVisionTasks(WASM_LOCAL_URL);
+  try {
+    landmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: MODEL_LOCAL_URL,
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numFaces: 1
+    });
+  } catch {
+    landmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: MODEL_LOCAL_URL,
+        delegate: "CPU"
+      },
+      runningMode: "VIDEO",
+      numFaces: 1
+    });
+  }
+  alAvisar({ log: 'Offline model ready.' });
+}
+
+function limpiarFuenteVideo() {
+  const stream = video.srcObject;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
+  if (backupBlobUrl) {
+    URL.revokeObjectURL(backupBlobUrl);
+    backupBlobUrl = null;
+  }
+  video.pause();
+  video.removeAttribute("src");
+  video.loop = false;
+}
+
+export function esModoVideoBackup() {
+  return modoBackup;
 }
 
 export async function encender() {
   try {
     if (!landmarker) await cargarModelo();
+    corriendo = false;
+    limpiarFuenteVideo();
+    modoBackup = false;
+
     const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
     video.srcObject = stream;
     await video.play();
-    overlay.width  = video.videoWidth;
-    overlay.height = video.videoHeight;
+    overlay.width  = video.videoWidth || 640;
+    overlay.height = video.videoHeight || 480;
+    ultimoTs = -1;
     corriendo = true;
-    alAvisar({ camara: 'encendida', log: 'Measuring. The video is not stored anywhere.' });
+    alAvisar({ camara: 'encendida', modo: 'webcam', log: 'Measuring live. The video is not stored anywhere.' });
     requestAnimationFrame(bucle);
     return true;
   } catch (e) {
-    alAvisar({ camara: 'error', log: 'Error: ' + e.message + ' — open the page from a local server, not by double-clicking.' });
+    alAvisar({ camara: 'error', log: 'Error: ' + e.message + ' — use 🎞️ Video Backup if no webcam is available.' });
+    return false;
+  }
+}
+
+export async function encenderConArchivo(file) {
+  if (!file) return false;
+  try {
+    if (!landmarker) await cargarModelo();
+    corriendo = false;
+    limpiarFuenteVideo();
+    modoBackup = true;
+
+    backupBlobUrl = URL.createObjectURL(file);
+    video.src = backupBlobUrl;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    await video.play();
+    overlay.width  = video.videoWidth || 640;
+    overlay.height = video.videoHeight || 480;
+    ultimoTs = -1;
+    corriendo = true;
+    alAvisar({ camara: 'encendida', modo: 'backup', log: `🎞️ Video Backup looping: ${file.name}` });
+    requestAnimationFrame(bucle);
+    return true;
+  } catch (e) {
+    alAvisar({ camara: 'error', log: 'Failed to load backup video: ' + e.message });
     return false;
   }
 }
 
 export function apagar() {
   corriendo = false;
-
-  // Cortar el stream de verdad: si no se paran las pistas, la luz de la
-  // cámara queda encendida aunque el video ya no se vea.
-  const stream = video.srcObject;
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  video.srcObject = null;
+  modoBackup = false;
+  limpiarFuenteVideo();
+  muestrasEdema = [];
 
   ctx.clearRect(0, 0, overlay.width, overlay.height);
   alAvisar({ camara: 'apagada', log: 'Camera off. Nothing is being measured.' });
@@ -137,7 +194,7 @@ export function calibrar() {
 }
 
 export function reiniciar() {
-  parpadeos = []; microsuenos = 0; muestras = []; historia = [];
+  parpadeos = []; microsuenos = 0; muestras = []; historia = []; muestrasEdema = [];
   enviarMetrica("blink_rate", 0);
   enviarMetrica("microsleep", 0);
   enviarMetrica("perclos", 0);
@@ -151,15 +208,19 @@ function bucle() {
   const intervaloMs = 1000 / CFG.TARGET_FPS;
 
   // Throttling: inferencia a 15 FPS como máximo
-  if ((ahora - ultimoProcesado >= intervaloMs) && video.currentTime !== ultimoTs) {
+  if ((ahora - ultimoProcesado >= intervaloMs) && video.currentTime !== ultimoTs && video.readyState >= 2) {
     ultimoProcesado = ahora;
     ultimoTs = video.currentTime;
-    const res = landmarker.detectForVideo(video, ahora);
+    if (video.videoWidth && overlay.width !== video.videoWidth) {
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+    }
+    const res = landmarker.detectForVideo(video, Math.round(ahora));
 
     if (res.faceLandmarks && res.faceLandmarks.length) {
       const pts = res.faceLandmarks[0];
       const e = (ear(pts, OJOS.derecho) + ear(pts, OJOS.izquierdo)) / 2;
-      procesar(e, ahora);
+      procesar(e, ahora, pts);
       dibujarPuntos(pts);
     } else {
       ctx.clearRect(0, 0, overlay.width, overlay.height);
@@ -174,7 +235,7 @@ function bucle() {
 }
 
 // --- lógica de medición ----------------------------------------------------
-function procesar(e, t) {
+function procesar(e, t, pts) {
   // calibración: cinco segundos con los ojos abiertos fijan el umbral propio
   if (calibrando) {
     valoresCal.push(e);
@@ -222,6 +283,18 @@ function procesar(e, t) {
   historia.push(e);
   if (historia.length > 300) historia.shift();
 
+  // Medición geométrica de Edema Facial (facial_edema.js)
+  let edemaSample = null;
+  let edemaMedian = null;
+  if (window.FacialEdema && pts) {
+    edemaSample = window.FacialEdema.measure(pts);
+    if (edemaSample) {
+      muestrasEdema.push(edemaSample);
+      if (muestrasEdema.length > 15) muestrasEdema.shift();
+      edemaMedian = window.FacialEdema.medianSample(muestrasEdema) || edemaSample;
+    }
+  }
+
   // telemetría periódica a 1 Hz
   if (t - ultimoEnvioTelemetria >= 1000) {
     ultimoEnvioTelemetria = t;
@@ -230,8 +303,7 @@ function procesar(e, t) {
     enviarMetrica("perclos", Number((perclos * 100).toFixed(1)));
   }
 
-  // Los 8 números por captura (tarea 14). Nada más sale de acá: el cuadro de
-  // video se procesó y ya se descartó.
+  // Los números por captura + geometría de edema facial
   alActualizar({
     ear: e,
     umbral,
@@ -241,7 +313,9 @@ function procesar(e, t) {
     duracion_ultimo_cierre_ms: duracionUltimoCierre,
     fps,
     cerrado,
-    historia
+    historia,
+    edemaSample,
+    edemaMedian
   });
 }
 
@@ -267,5 +341,5 @@ export function iniciar({ elVideo, elOverlay, onActualizar, onAviso }) {
   ctx     = overlay.getContext("2d");
   alActualizar = onActualizar || (() => {});
   alAvisar     = onAviso      || (() => {});
-  conectarWebSocket();
+  vincularBusEventos();
 }

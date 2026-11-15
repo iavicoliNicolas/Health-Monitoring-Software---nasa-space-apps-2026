@@ -124,6 +124,7 @@ struct EnvironmentTelemetry {
     double cabin_ppco2_mmHg = 3.2;      // Partial pressure CO2 (NASA nominal < 3.0 mmHg)
     int spo2_pct = 94;                 // Blood oxygen saturation (< 95% hypoxemia)
     double body_temperature_c = 37.9;   // Core temp (> 38.5 C space fever)
+    double respiratory_rate_bpm = 16.0; // Respiratory rate breaths/min (nominal 12-20 rpm)
 
     std::string to_json() const {
         std::ostringstream ss;
@@ -131,7 +132,8 @@ struct EnvironmentTelemetry {
         ss << "{"
            << "\"cabin_ppco2_mmHg\":" << cabin_ppco2_mmHg << ","
            << "\"spo2_pct\":" << spo2_pct << ","
-           << "\"body_temperature_c\":" << body_temperature_c
+           << "\"body_temperature_c\":" << body_temperature_c << ","
+           << "\"respiratory_rate_bpm\":" << respiratory_rate_bpm
            << "}";
         return ss.str();
     }

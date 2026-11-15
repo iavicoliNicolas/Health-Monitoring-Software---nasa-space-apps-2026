@@ -26,7 +26,8 @@ std::vector<ClinicalAlert> FlightSurgeonAI::evaluate(const RidgePayload& payload
     const bool non_finite_reading =
         !std::isfinite(r.acute_event_mSv) || !std::isfinite(r.career_accumulated_mSv) ||
         !std::isfinite(g.onsd_mm) || !std::isfinite(e.cabin_ppco2_mmHg) ||
-        !std::isfinite(e.body_temperature_c) || !std::isfinite(i.sleep_hours_last_24h) ||
+        !std::isfinite(e.body_temperature_c) || !std::isfinite(e.respiratory_rate_bpm) ||
+        !std::isfinite(i.sleep_hours_last_24h) ||
         !std::isfinite(i.hrv_rmssd_drop_pct) || !std::isfinite(i.perclos_pct);
 
     const bool hr_spo2_contradiction = s.vital_signs_present && g.heart_rate_bpm <= 0 && e.spo2_pct >= 95;
@@ -37,7 +38,7 @@ std::vector<ClinicalAlert> FlightSurgeonAI::evaluate(const RidgePayload& payload
     const bool impossible_bounds =
         e.spo2_pct < 0 || e.spo2_pct > 100 ||
         r.acute_event_mSv < 0.0 || r.career_accumulated_mSv < 0.0 ||
-        e.cabin_ppco2_mmHg < 0.0 || g.onsd_mm < 0.0 ||
+        e.cabin_ppco2_mmHg < 0.0 || e.respiratory_rate_bpm < 0.0 || g.onsd_mm < 0.0 ||
         g.blood_sugar_mg_dl <= 0 || g.blood_sugar_mg_dl > THRESHOLD_BLOOD_SUGAR_ARTIFACT_MAX_MGDL;
 
     if (non_finite_reading || hr_spo2_contradiction || impossible_hr_while_alive || impossible_temp || impossible_bounds) {
@@ -281,6 +282,40 @@ std::vector<ClinicalAlert> FlightSurgeonAI::evaluate(const RidgePayload& payload
         alerts.push_back(alert);
     }
 
+    if (e.respiratory_rate_bpm < THRESHOLD_RESP_RATE_LOW_CRIT_BPM) {
+        ClinicalAlert alert;
+        alert.status = AlertSeverity::CRITICAL;
+        alert.trigger_metric = "respiratory_rate_bpm";
+        alert.trigger_value = format_decimal(e.respiratory_rate_bpm, 1) + " rpm";
+        alert.threshold_limit = "< " + format_decimal(THRESHOLD_RESP_RATE_LOW_CRIT_BPM, 1) + " rpm";
+        alert.diagnosis = "BRADIPNEA SEVERA / DEPRESIÓN RESPIRATORIA CENTRAL EN MICROGRAVEDAD";
+        alert.tactical_action =
+            "Asegurar permeabilidad de vía aérea e iniciar soporte ventilatorio con bolsa-válvula-mascarilla al 100% O2. "
+            "Administrar Naloxona 0.4mg IV/IM si se sospecha depresión farmacológica. Vigilar capnografía continua.";
+        alert.astronaut_explanation =
+            "Tu frecuencia respiratoria cayó a un nivel peligroso y tus pulmones no están renovando suficiente aire. "
+            "Colócate la mascarilla de oxígeno de flujo continuo y avisa de inmediato a tu compañero de guardia.";
+        alert.osdr_reference = "OSD-359 / OSD-569";
+        alert.timestamp = ts;
+        alerts.push_back(alert);
+    } else if (e.respiratory_rate_bpm > THRESHOLD_RESP_RATE_HIGH_WARN_BPM) {
+        ClinicalAlert alert;
+        alert.status = AlertSeverity::WARNING;
+        alert.trigger_metric = "respiratory_rate_bpm";
+        alert.trigger_value = format_decimal(e.respiratory_rate_bpm, 1) + " rpm";
+        alert.threshold_limit = "> " + format_decimal(THRESHOLD_RESP_RATE_HIGH_WARN_BPM, 1) + " rpm";
+        alert.diagnosis = "TAQUIPNEA COMPENSATORIA / ESTRÉS VENTILATORIO O HIPERCAPNIA SUBCLÍNICA";
+        alert.tactical_action =
+            "Verificar presión parcial de CO2 local y flujo de ventiladores de casco/camarote. "
+            "Guiar respiración diafragmática controlada (12-16 rpm), hidratar y reevaluar SpO2 y auscultación pulmonar.";
+        alert.astronaut_explanation =
+            "Estás respirando demasiado rápido en reposo, posiblemente por bolsillos de CO2 acumulado o estrés agudo. "
+            "Acércate a una salida de ventilación de cabina y realiza respiraciones lentas y profundas.";
+        alert.osdr_reference = "OSD-359 / OSD-174";
+        alert.timestamp = ts;
+        alerts.push_back(alert);
+    }
+
     // 5. WARNING: Sleep < 6.0h, HRV RMSSD drop > 25%, Blink rate < 8/min, Microsleep >= 1, and Mood/Sensor Discrepancy
     if (i.sleep_hours_last_24h < THRESHOLD_SLEEP_WARN_HOURS) {
         ClinicalAlert alert;
@@ -416,6 +451,8 @@ int FlightSurgeonAI::compute_health_score(const RidgePayload& payload) const {
     else if (e.cabin_ppco2_mmHg > 2.0) score -= 5.0;
     if (e.spo2_pct < 95) score -= 25.0;
     if (e.body_temperature_c > 38.5) score -= 20.0;
+    if (e.respiratory_rate_bpm < THRESHOLD_RESP_RATE_LOW_CRIT_BPM) score -= 25.0;
+    else if (e.respiratory_rate_bpm > THRESHOLD_RESP_RATE_HIGH_WARN_BPM) score -= 10.0;
 
     // Isolation / Stress penalties
     if (i.sleep_hours_last_24h < 6.0) score -= 8.0;

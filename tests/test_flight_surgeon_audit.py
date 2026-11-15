@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import re
 import socket
 import struct
@@ -119,9 +120,11 @@ def assert_clean_decimals(alerts):
 
 def run_audit_tests():
     port = 9006
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    daemon_bin = os.path.join(repo_root, "vitalgrid_daemon.exe")
     proc = subprocess.Popen(
-        ["./vitalgrid_daemon.exe", str(port)],
-        cwd="f:/VitalGrid",
+        [daemon_bin, str(port)],
+        cwd=repo_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -139,6 +142,7 @@ def run_audit_tests():
         assert not ridge["timestamp"].startswith("2026-10-02"), f"Stale hardcoded timestamp: {ridge['timestamp']}"
         assert not alerts, f"Expected zero alerts on nominal baseline, got: {alerts}"
         assert ridge["telemetry_ridge"]["G_gravity"]["blood_sugar_mg_dl"] == 92, ridge["telemetry_ridge"]["G_gravity"]
+        assert ridge["telemetry_ridge"]["E_environment"]["respiratory_rate_bpm"] == 16.0, ridge["telemetry_ridge"]["E_environment"]
         assert ridge["telemetry_ridge"]["I_isolation"]["crew_mood"] == "OPTIMAL", ridge["telemetry_ridge"]["I_isolation"]
         print(f"[PASS] Nominal baseline, Phase 2 RIDGE fields & dynamic UTC timestamp: {ridge['timestamp']}")
 
@@ -251,6 +255,28 @@ def run_audit_tests():
         hypo_alerts = [a for a in alerts_hypo if a["trigger_metric"] == "blood_sugar_mg_dl"]
         assert hypo_alerts and hypo_alerts[0]["status"] == "CRITICAL", f"Expected glucose CRITICAL, got: {alerts_hypo}"
         print(f"[PASS] Phase 2 Hypoglycemia (<65 mg/dL): {hypo_alerts[0]['diagnosis']}")
+
+        # Phase 2B-Resp: Respiratory Rate Monitoring (Tachypnea WARNING > 24 rpm & Bradypnea CRITICAL < 10 rpm)
+        ws_send_text(sock, "RESET_NOMINAL")
+        ws_send_text(sock, json.dumps({"metric": "respiratory_rate_bpm", "value": 28.0}))
+        _, alerts_tachy = collect_next_tick_bundle(
+            sock,
+            predicate=lambda r: r["telemetry_ridge"]["E_environment"]["respiratory_rate_bpm"] > 24.0,
+        )
+        assert_clean_decimals(alerts_tachy)
+        tachy_alerts = [a for a in alerts_tachy if a["trigger_metric"] == "respiratory_rate_bpm"]
+        assert tachy_alerts and tachy_alerts[0]["status"] == "WARNING", f"Expected tachypnea WARNING, got: {alerts_tachy}"
+        print(f"[PASS] Respiratory Rate Tachypnea (>24 rpm): {tachy_alerts[0]['diagnosis']}")
+
+        ws_send_text(sock, json.dumps({"metric": "respiratory_rate_bpm", "value": 8.0}))
+        _, alerts_brady = collect_next_tick_bundle(
+            sock,
+            predicate=lambda r: r["telemetry_ridge"]["E_environment"]["respiratory_rate_bpm"] < 10.0,
+        )
+        assert_clean_decimals(alerts_brady)
+        brady_alerts = [a for a in alerts_brady if a["trigger_metric"] == "respiratory_rate_bpm"]
+        assert brady_alerts and brady_alerts[0]["status"] == "CRITICAL", f"Expected bradypnea CRITICAL, got: {alerts_brady}"
+        print(f"[PASS] Respiratory Rate Bradypnea (<10 rpm): {brady_alerts[0]['diagnosis']}")
 
         # Phase 2C: Crew Self-Report Discrepancy (crew_mood == OPTIMAL while ocular fatigue is detected)
         ws_send_text(sock, "RESET_NOMINAL")
