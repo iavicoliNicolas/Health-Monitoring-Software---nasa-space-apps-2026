@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z.E.U.S · Telemetry</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16293d">
+<link rel="icon" type="image/png" sizes="192x192" href="iconos/zeus-192.png">
+<link rel="apple-touch-icon" href="iconos/zeus-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== Riel lateral =============================================== -->
+  <nav class="riel">
+    <a class="riel-marca" href="index.html" title="Back to start">Z</a>
+
+    <button class="riel-btn activo" data-ir="inicio" title="Telemetry">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+    </button>
+    <button class="riel-btn" data-ir="panelCamara" title="Camera">
+      <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+    </button>
+    <button class="riel-btn" data-ir="panelAnalisis" title="Analysis">
+      <svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+    </button>
+
+    <div class="riel-sep"></div>
+
+    <!-- Nombre de la app en el borde, leído de abajo hacia arriba -->
+    <div class="riel-nombre">Z.E.U.S</div>
+
+    <div class="riel-crew" id="rielCrew" title="Crew member">—</div>
+  </nav>
+
+  <!-- ===== Hoja ======================================================= -->
+  <div class="hoja">
+
+    <header class="cabecera">
+      <div>
+        <h1>Z.E.U.S</h1>
+        <p class="sub" id="lineaTripulante"></p>
+      </div>
+      <div class="cabecera-der">
+        <span class="met" id="reloj">MET +000:00:00:00</span>
+        <span class="conexion desconectado" id="pastillaConexion">
+          <span class="punto"></span><span id="etiquetaConexion">Disconnected</span>
+        </span>
+      </div>
+    </header>
+
+    <div class="principal">
+
+      <!-- ===== COLUMNA IZQUIERDA ===================================== -->
+      <div class="col-izq">
+
+        <!-- Puntaje de salud -->
+        <section class="tarjeta puntaje">
+          <div class="anillo">
+            <svg viewBox="0 0 120 120">
+              <circle class="anillo-base" cx="60" cy="60" r="52"/>
+              <circle class="anillo-valor" id="anilloValor" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="anillo-centro">
+              <b id="puntajeNum">--</b>
+              <span id="puntajeEstado">no measurement</span>
+            </div>
+          </div>
+          <p class="puntaje-lbl">Health score</p>
+        </section>
+
+        <!-- Signos vitales -->
+        <section class="vitales" id="vitales"></section>
+
+        <!-- Panel de simulación -->
+        <section class="tarjeta">
+          <div class="placeholder">Part 6 · Simulation panel</div>
+        </section>
+
+      </div>
+
+      <!-- ===== COLUMNA CENTRAL ======================================= -->
+      <div class="col-centro">
+        <section class="tarjeta alto-total cuerpo">
+          <div class="tarjeta-cab">
+            <h2>Crew body map</h2>
+            <span class="pista">Tap a point to see its metric</span>
+          </div>
+
+          <!-- ACÁ VA EL RENDER DE TU COMPAÑERA: reemplazá este <svg> por
+               <img src="assets/cuerpo.png" alt=""> o <canvas id="lienzoRender">.
+               Los puntos se posicionan en % sobre el contenedor, así que
+               siguen funcionando con cualquier render del mismo encuadre. -->
+          <div class="figura" id="figura">
+            <img class="silueta" src="assets/cuerpo.png" alt="Crew anatomical map">
+
+            <div class="puntos" id="puntos"></div>
+          </div>
+
+          <!-- Detalle de la zona tocada -->
+          <div class="detalle oculto" id="detalle">
+            <div class="detalle-cab">
+              <b id="detalleNombre">—</b>
+              <button class="detalle-cerrar" id="detalleCerrar" aria-label="Close">×</button>
+            </div>
+            <div class="detalle-valor"><span id="detalleValor">—</span><small id="detalleUnidad"></small></div>
+            <p class="detalle-fuente" id="detalleFuente"></p>
+          </div>
+
+          <p class="figura-nota">Points change color with their metric’s state. Gray = no measurement.</p>
+        </section>
+      </div>
+
+      <!-- ===== COLUMNA DERECHA ======================================= -->
+      <div class="col-der">
+
+        <!-- ===== CÁMARA · MediaPipe ================================ -->
+        <section class="tarjeta camara" id="panelCamara">
+          <div class="tarjeta-cab">
+            <h2>Camera</h2>
+            <span class="cam-estado apagada" id="camEstado">
+              <span class="punto"></span>Camera off
+            </span>
+          </div>
+
+          <!-- Tres pestañas: cada una con sus propias métricas -->
+          <div class="pestanas" role="tablist">
+            <button class="pestana activa" data-tab="parpados" role="tab">Eyelids</button>
+            <button class="pestana"        data-tab="cansancio" role="tab">Fatigue</button>
+            <button class="pestana"        data-tab="edema"     role="tab">Facial edema</button>
+          </div>
+
+          <!-- Display de la cámara -->
+          <div class="cam">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="cam-off" id="camOff">
+              <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+              <span>Camera off</span>
+            </div>
+          </div>
+
+          <div class="cam-btns">
+            <button class="btn" id="btnEncender">Start</button>
+            <button class="btn btn-sec" id="btnCalibrar" disabled>Calibrate</button>
+            <button class="btn btn-sec" id="btnReiniciar" disabled>Reset</button>
+          </div>
+
+          <!-- ===== Panel: PÁRPADOS ===== -->
+          <div class="tab-panel activo" data-panel="parpados">
+            <div class="estado-ojo sin-dato" id="estadoOjo">Not measuring</div>
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Aperture (EAR)</span><b id="vEar">—</b></div>
+              <div class="cam-fila"><span>Closure threshold</span><b id="vUmbral">0.120</b></div>
+              <div class="cam-fila"><span>Blinks / min</span><b id="vParpadeos">—</b></div>
+              <div class="cam-fila"><span>Last closure</span><b id="vDuracion">—</b></div>
+            </div>
+            <canvas id="curva" class="curva"></canvas>
+          </div>
+
+          <!-- ===== Panel: CANSANCIO ===== -->
+          <div class="tab-panel" data-panel="cansancio">
+            <div class="cam-destacados">
+              <div class="destacado" id="dPerclos">
+                <b>—</b><span>PERCLOS</span><small>% of time with the eye closed</small>
+              </div>
+              <div class="destacado" id="dMicro">
+                <b>—</b><span>Microsleeps</span><small>closures ≥ 500 ms</small>
+              </div>
+            </div>
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Frames per second</span><b id="vFps">—</b></div>
+              <div class="cam-fila"><span>Analysis window</span><b>60 s</b></div>
+            </div>
+            <p class="nota">
+              PERCLOS is not the same as blinks per minute: it measures <b>how long</b>
+              the eye stayed closed, not how many times. A tired person may blink just as
+              often, but each blink lasts longer.
+            </p>
+          </div>
+
+          <!-- ===== Panel: EDEMA FACIAL ===== -->
+          <div class="tab-panel" data-panel="edema">
+            <div class="cam-lista">
+              <div class="cam-fila"><span>Cheekbones vs day 1</span><b id="vPomulos">—</b></div>
+              <div class="cam-fila"><span>Jawline vs day 1</span><b id="vMandibula">—</b></div>
+              <div class="cam-fila"><span>Width / height</span><b id="vRatio">—</b></div>
+              <div class="cam-fila"><span>Baseline</span><b id="vDia1">not set</b></div>
+            </div>
+            <div class="cam-btns">
+              <button class="btn btn-sec" id="btnFijarDia1" disabled>Set day 1</button>
+            </div>
+            <p class="nota">
+              In microgravity roughly 2 litres of fluid shift headward within the first
+              6–10 hours, and periorbital swelling persists for the whole mission.
+              <b><code>facial_edema.js</code> still has to be ported from the previous repo.</b>
+            </p>
+          </div>
+
+          <p class="log" id="camLog">Waiting…</p>
+        </section>
+
+        <!-- ===== Trazado cardíaco ================================== -->
+        <section class="tarjeta ecg">
+          <div class="tarjeta-cab">
+            <h2>Cardiac trace</h2>
+            <span class="ecg-bpm sin-dato" id="ecgBpm">— bpm</span>
+          </div>
+          <canvas id="ecgCanvas" class="ecg-canvas"></canvas>
+        </section>
+      </div>
+
+      <!-- ===== BANDA INFERIOR · Matriz RIDGE ========================= -->
+      <section class="tarjeta banda" id="panelAnalisis">
+        <div class="tarjeta-cab">
+          <h2>Analysis — NASA RIDGE biomedical matrix</h2>
+          <span class="pista">5 human spaceflight hazards</span>
+        </div>
+        <div class="pilares" id="grupos"></div>
+        <div class="leyenda" id="leyenda"></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/ecg.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/panel-camara.js"></script>
+</body>
+</html>
