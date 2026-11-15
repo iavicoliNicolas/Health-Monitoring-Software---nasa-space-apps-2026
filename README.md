@@ -44,13 +44,12 @@ During deep-space transit missions beyond low Earth orbit (LEO), communication l
                                                 |  ws://127.0.0.1:9002
                                                 v
                     +-------------------------------------------------------+
-                    |             CREW DRAGON GLASS COCKPIT UI              |
-                    |  - 1000 Hz Real-Time ECG Waveform Canvas              |
-                    |  - Health Score Gauge & Survival Triad Indicators     |
-                    |  - RIDGE Matrix (R, I, D, G, E) Telemetry Visualizer  |
-                    |  - Autonomous Clinical Directives & Action Protocols  |
-                    |  - Procedural Audio Synthesizer (Apollo/Artemis Tones)|
-                    |  - Simulation Cockpit (Anomaly Injection Pad)         |
+                    |          COCKPIT Z.E.U.S  (web/index.html)            |
+                    |  - Puntaje de salud, signos vitales y matriz RIDGE    |
+                    |  - Mapa del tripulante y trazado ECG                  |
+                    |  - Camara local: parpadeo, PERCLOS, edema facial      |
+                    |  - Se abre por HTTP (file:// bloquea metricas.json)   |
+                    |  - WebSocket ws://127.0.0.1:9002                      |
                     +-------------------------------------------------------+
 ```
 
@@ -62,11 +61,13 @@ The backend continuously ingests and validates structured JSON telemetry conform
 
 - **Additional Phase 2 Indicators & Multimodal Inputs**: Tracks `blood_sugar_mg_dl` (`GravityTelemetry`) and manual/ocular `crew_mood` (`IsolationTelemetry`) alongside interactive HUD controls: clickable 4-zone SVG human body map, manual crew lab/self-report inputs (glucose, ONSD, mood), space habitat environment selector (`comm_delay_oneway_min`), and countermeasure routine streak tracking (ARED 2.5h, glucose, ocular scan).
 
+Reposo nominal al arrancar, el mismo estado que `RESET_NOMINAL`. Con ppCO2 en 2,1 mmHg el puntaje queda en **95**: por encima de 2,0 se restan 5 puntos y no se cruza ningún umbral clínico. El pulso que se muestra puede oscilar ±1 lpm alrededor de 72; el `health_score` no.
+
 ```json
 {
-  "timestamp": "2026-11-14T12:33:24Z",
+  "timestamp": "2026-11-15T14:00:00Z",
   "crew_member_id": "CMD-01",
-  "health_score": 92,
+  "health_score": 95,
   "survival_status": {
     "vital_signs_present": true,
     "sos_panic_button_active": false,
@@ -75,28 +76,34 @@ The backend continuously ingests and validates structured JSON telemetry conform
   "telemetry_ridge": {
     "R_radiation": {
       "career_accumulated_mSv": 145.2,
-      "acute_event_mSv": 12.0
+      "acute_event_mSv": 8.5
     },
     "I_isolation": {
-      "sleep_hours_last_24h": 5.8,
-      "hrv_rmssd_drop_pct": 18.5,
-      "pvt_reaction_time_ms": 280
+      "sleep_hours_last_24h": 7.2,
+      "hrv_rmssd_drop_pct": 12.0,
+      "pvt_reaction_time_ms": 240,
+      "blink_rate_per_min": 18,
+      "microsleep_events": 0,
+      "perclos_pct": 0.0,
+      "crew_mood": "OPTIMAL"
     },
     "D_distance": {
       "comm_delay_oneway_min": 20.5,
       "med_supply_days_remaining": 412
     },
     "G_gravity": {
-      "heart_rate_bpm": 105,
-      "blood_pressure_sys": 135,
-      "blood_pressure_dia": 85,
-      "onsd_mm": 5.2,
-      "exercise_completed_hours": 1.5
+      "heart_rate_bpm": 72,
+      "blood_pressure_sys": 120,
+      "blood_pressure_dia": 78,
+      "onsd_mm": 4.8,
+      "exercise_completed_hours": 1.5,
+      "blood_sugar_mg_dl": 92
     },
     "E_environment": {
-      "cabin_ppco2_mmHg": 3.2,
-      "spo2_pct": 94,
-      "body_temperature_c": 37.9
+      "cabin_ppco2_mmHg": 2.1,
+      "spo2_pct": 98,
+      "body_temperature_c": 36.8,
+      "respiratory_rate_bpm": 14
     }
   }
 }
@@ -176,78 +183,78 @@ $$\text{Trigger} = (\neg \text{vital\_signs\_present}) \lor (\text{sos\_panic\_b
 ## 5. Directory Structure
 
 ```
-f:\VitalGrid\
+Health-Monitoring-Software---nasa-space-apps-2026/
 ├── CMakeLists.txt              # Standard CMake build configuration
 ├── Makefile                    # Cross-platform Makefile (Windows / Linux / macOS)
-├── build.bat                   # 1-click Windows compilation script
-├── run.bat                     # 1-click launch script (builds, opens UI & starts daemon)
-├── vitalgrid_daemon.exe        # Pre-compiled high-performance binary
-├── src\
+├── build.bat                   # Windows compilation script
+├── run.bat                     # Windows: compila si falta, demonio :9002 y HTTP de web/
+├── run.sh                      # Linux: compila si falta, demonio :9002 y HTTP de web/
+├── src/
 │   ├── main.cpp                # Daemon lifecycle, telemetry ingestion loop & signal handling
-│   ├── models\
+│   ├── models/
 │   │   ├── ridge_payload.hpp   # RIDGE 5-pillar structs & exact JSON serialization
 │   │   └── alert_payload.hpp   # Clinical alert & tactical directives model
-│   ├── engine\
+│   ├── engine/
 │   │   ├── flight_surgeon.hpp  # NASA clinical thresholds specification
 │   │   └── flight_surgeon.cpp  # Autonomous rule evaluation & health scoring logic
-│   ├── soma\
-│   │   ├── circular_buffer.hpp # Thread-safe 1000Hz circular ring buffer
+│   ├── soma/
+│   │   ├── circular_buffer.hpp # Thread-safe circular ring buffer
 │   │   ├── soma_watchdog.hpp   # SOMA watchdog thread & DSOC transmission records
 │   │   └── soma_watchdog.cpp   # Science-over-survival burst sequence implementation
-│   └── network\
+│   └── network/
 │       ├── websocket_server.hpp# Self-contained RFC-6455 WebSocket server header
 │       └── websocket_server.cpp# WinSock2/POSIX implementation with built-in SHA1/Base64
-└── web\
-    ├── index.html              # Crew Dragon glass-cockpit interactive dashboard
-    ├── css\
-    │   └── style.css           # Futuristic aerospace HUD design system
-    └── js\
-        ├── audio_synth.js      # Procedural Web Audio API sound synthesizer
-        └── app.js              # WebSocket telemetry handler, live ECG & anomaly pad
+└── web/
+    ├── index.html              # Cockpit Z.E.U.S
+    ├── css/
+    │   └── style.css
+    ├── data/
+    │   └── metricas.json       # Umbrales y rutas; la pantalla se arma desde acá
+    └── js/
+        ├── app.js              # Cliente WebSocket, puntaje, vitales y matriz RIDGE
+        ├── camara.js           # EAR, PERCLOS y envío al demonio
+        ├── panel-camara.js     # Panel de cámara y edema facial
+        ├── facial_edema.js     # Comparación de hinchazón contra el día 1
+        └── ecg.js              # Trazado cardíaco
 ```
 ---
 
-## 6. 🚀 Guía Rápida para el Equipo (Cómo Correr el Proyecto en 2 Minutos)
+## 6. Guía rápida (cómo correr el proyecto)
 
-¡Bienvenido al equipo de **VitalGrid**! Sigue estos pasos para clonar y levantar el sistema de monitoreo biomédico en tu computadora:
+### Paso 1: Clonar el repositorio
 
-### Paso 1: Clonar el Repositorio
-Abre tu terminal (PowerShell, CMD, Git Bash o terminal de Linux/macOS) y clona el proyecto:
 ```bash
-git clone https://github.com/86developer/NASA-Spaceapps-2026.git
-cd NASA-Spaceapps-2026
+git clone https://github.com/iavicoliNicolas/Health-Monitoring-Software---nasa-space-apps-2026.git
+cd Health-Monitoring-Software---nasa-space-apps-2026
 ```
 
 ---
 
-### Paso 2: Levantar el Proyecto
+### Paso 2: Levantar el demonio y el cockpit
 
-#### 🪟 En Windows (El método más fácil - 1 Clic):
-Simplemente ejecuta el script automatizado:
+La pantalla es el cockpit **Z.E.U.S** (`web/index.html`). El demonio habla por `ws://127.0.0.1:9002`. La página se abre **por HTTP**: con `file://` el navegador bloquea el `fetch` de `data/metricas.json` y la cámara.
+
+#### En Windows
+
 ```cmd
 .\run.bat
 ```
-> **¿Qué hace `run.bat` automáticamente?**
-> 1. Detecta tu compilador `g++` (incluso si está instalado vía Scoop o MinGW).
-> 2. Compila el demonio `vitalgrid_daemon.exe` optimizado con `-O3`.
-> 3. Abre automáticamente la interfaz **Crew Dragon** (`web/index.html`) en tu navegador predeterminado.
-> 4. Inicia el servidor WebSocket en segundo plano en `ws://127.0.0.1:9002`.
 
-#### 🐧 En Linux / macOS / WSL:
-Compila con `g++` (o `clang++`) y levanta el demonio:
+`run.bat` compila `vitalgrid_daemon.exe` si no está, prende el demonio en el puerto 9002 y sirve la carpeta `web/` en `http://127.0.0.1:8080/`. Los dos procesos quedan vivos juntos. Una tecla en esa ventana los detiene. `run-zeus.bat` hace el mismo arranque.
+
+#### En Linux / macOS / WSL
+
 ```bash
-# Compilar:
-g++ -std=c++17 -O3 -Wall -Wextra src/main.cpp src/engine/flight_surgeon.cpp src/soma/soma_watchdog.cpp src/network/websocket_server.cpp -pthread -o vitalgrid_daemon
-
-# Iniciar backend:
-./vitalgrid_daemon 9002
+chmod +x run.sh
+./run.sh
 ```
-Luego abre el archivo `web/index.html` en tu navegador favorito (Chrome, Firefox, Edge, Safari).
+
+`run.sh` corre `make` si falta `vitalgrid_daemon`, prende el demonio en el puerto 9002 y sirve `web/` en `http://127.0.0.1:8080/`. Ctrl+C detiene los dos. Abrí `http://127.0.0.1:8080/` (es `web/index.html`).
 
 ---
 
-### 🛠️ ¿No tienes compilador C++ instalado?
-- **En Windows (Recomendado vía Scoop):**
+### ¿No tienes compilador C++ instalado?
+- **En Windows (vía Scoop):**
   ```powershell
   scoop install gcc
   ```
@@ -262,14 +269,13 @@ Luego abre el archivo `web/index.html` en tu navegador favorito (Chrome, Firefox
 
 ---
 
-### Paso 3: Interactuar con el Dashboard
-Una vez abierto el dashboard:
-1. Verás el estado **"TELEMETRY ONLINE"** en verde en la barra superior.
-2. El ECG cardíaco comenzará a dibujar en tiempo real a 1000 Hz sincronizado con la frecuencia cardíaca.
-3. En la columna derecha encontrarás el **SIMULATION COCKPIT (ANOMALY INJECTION PAD)**:
-   - Haz clic en **`🚨 TRIGGER SOS BUTTON`**, **`💥 DEPRESSURIZE CABIN`** o **`💔 ASYSTOLE / COLLAPSE`** para activar el protocolo de emergencia **SOMA** ("Ciencia sobre Supervivencia"), ver el empaquetado forense Zstd, el cifrado militar AES-256-GCM y la transmisión láser DSOC a 1550nm hacia la Tierra.
-   - Haz clic en **`🫁 INJECT HYPOXIA`**, **`💨 INJECT ppCO2`** o **`👁️ INJECT SANS`** para ver cómo la IA del **Flight Surgeon** emite directivas tácticas inmediatas.
-   - Haz clic en **`✨ RESTORE ALL TO NOMINAL BASELINE`** para reiniciar todos los parámetros al estado de salud ideal.
+### Paso 3: Qué se ve en Z.E.U.S
+
+Con el demonio y el servidor HTTP prendidos, a los pocos segundos la pastilla dice **Telemetría en línea**. El puntaje de reposo es **95**, la SpO2 **98 %**, el pulso queda cerca de **72 lpm**, la frecuencia respiratoria en **14 rpm** y los pilares RIDGE en **Nominal**.
+
+Si se corta el demonio, la pastilla pasa a **Sin conexión** y los números vuelven a **Sin medición**. Al recargar la página, el cockpit vuelve a conectar solo.
+
+La cámara es opcional y local. Con ella prendida, **Fijar día 1** guarda la línea base de edema facial y las tres filas comparan contra ese día. No hace falta una segunda cámara.
 
 ---
 
@@ -287,15 +293,21 @@ cmake --build . --config Release
 ### Con Makefile:
 ```bash
 make
-./vitalgrid_daemon.exe
+./vitalgrid_daemon 9002
 ```
+
+En Windows el mismo `Makefile` deja `vitalgrid_daemon.exe`.
 
 ---
 
 ## 8. Ejecución de Pruebas de Integración (Opcional)
 Para verificar la conexión de telemetría y el disparo de SOMA desde scripts automatizados:
+`test_stream.py` y `test_soma.py` esperan el demonio ya prendido en el puerto 9002. Los otros dos lo arrancan ellos, buscando `vitalgrid_daemon` (Linux) o `vitalgrid_daemon.exe` (Windows) en la raíz del repo.
+
 ```bash
-python tests/test_stream.py
-python tests/test_soma.py
+python3 tests/test_stream.py
+python3 tests/test_soma.py
+python3 tests/test_peripheral_integration.py
+python3 tests/test_flight_surgeon_audit.py
 ```
 

@@ -80,9 +80,10 @@ function alActualizar(d) {
   micro.className = 'destacado' + (d.microsuenos > 0 ? ' critico' : '');
 
   $('vFps').textContent = d.fps;
+  refrescarEdemaEnVivo();
 
-  // El cockpit también muestra estas tres en la matriz RIDGE; se las pasamos
-  // por si la parte 7 todavía no está conectada al daemon.
+  // El daemon reescribe blink_rate, microsleep y perclos y los devuelve
+  // en el próximo payload. No hay un almacén paralelo en el frente.
   window.VitalGrid?.desdeCamara?.({
     parpadeos_min: d.parpadeos_min,
     perclos_pct: +d.perclos_pct.toFixed(1),
@@ -92,6 +93,8 @@ function alActualizar(d) {
 
 /* --- Avisos de estado ----------------------------------------------------- */
 function alAviso(a) {
+  if (!Camara.puntosCara()) muestrasEdema = [];
+
   if (a.log) $('camLog').textContent = a.log;
 
   if (a.enlace) {
@@ -117,6 +120,8 @@ function alAviso(a) {
     $('btnCalibrar').disabled = true;
     $('btnReiniciar').disabled = true;
     $('btnFijarDia1').disabled = true;
+    muestrasEdema = [];
+    pintarEdema(muestraGuardada());
     // Las métricas de la cámara dejan de ser actuales: a SIN MEDICIÓN.
     ['vEar', 'vParpadeos', 'vDuracion', 'vFps'].forEach(id => $(id).textContent = '—');
     $('dPerclos').querySelector('b').textContent = '—';
@@ -183,4 +188,94 @@ $('btnReiniciar').addEventListener('click', () => {
   Camara.reiniciar();
   $('dMicro').querySelector('b').textContent = '0';
   $('vDuracion').textContent = '—';
+});
+
+/* --- Edema facial ---------------------------------------------------------
+   Usa la cámara que ya está prendida. facial_edema.js mide; este panel
+   solo escribe #vPomulos, #vMandibula, #vRatio y #vDia1.
+   ------------------------------------------------------------------------- */
+const Edema = window.FacialEdema;
+let edemaStore = Edema ? Edema.loadStore() : { baseline: null, samples: [] };
+let muestrasEdema = [];
+
+function fmtPct(n) {
+  return (n > 0 ? '+' : '') + n.toFixed(1) + ' %';
+}
+
+function muestraGuardada() {
+  if (!edemaStore.baseline) return null;
+  return edemaStore.samples.length
+    ? edemaStore.samples[edemaStore.samples.length - 1]
+    : edemaStore.baseline;
+}
+
+function pintarEdema(sample) {
+  if (!Edema || !edemaStore.baseline) {
+    $('vPomulos').textContent = '—';
+    $('vMandibula').textContent = '—';
+    $('vRatio').textContent = '—';
+    $('vDia1').textContent = 'sin fijar';
+    return;
+  }
+  $('vDia1').textContent = edemaStore.baseline.day;
+  const deltas = sample ? Edema.componentDeltas(sample, edemaStore.baseline) : null;
+  if (!deltas) {
+    $('vPomulos').textContent = '—';
+    $('vMandibula').textContent = '—';
+    $('vRatio').textContent = '—';
+    return;
+  }
+  $('vPomulos').textContent = fmtPct(deltas.cheek);
+  $('vMandibula').textContent = fmtPct(deltas.jaw);
+  $('vRatio').textContent = fmtPct(deltas.roundness);
+}
+
+function tomarMuestraEdema() {
+  if (!Edema) return null;
+  const pts = Camara.puntosCara();
+  if (!pts) {
+    muestrasEdema = [];
+    return null;
+  }
+  const sample = Edema.measure(pts);
+  if (!sample) return Edema.medianSample(muestrasEdema);
+  muestrasEdema.push(sample);
+  if (muestrasEdema.length > 24) muestrasEdema.shift();
+  return Edema.medianSample(muestrasEdema) || sample;
+}
+
+function refrescarEdemaEnVivo() {
+  if (!encendida) return;
+  const vivo = tomarMuestraEdema();
+  if (edemaStore.baseline && vivo) pintarEdema(vivo);
+}
+
+if (Edema) {
+  try { Edema.selfTest(); }
+  catch (err) { console.error('[VitalGrid] Edema facial:', err); }
+}
+pintarEdema(muestraGuardada());
+
+$('btnFijarDia1').addEventListener('click', () => {
+  if (!Edema || $('btnFijarDia1').disabled) return;
+  const vivo = tomarMuestraEdema();
+  if (!vivo) {
+    $('camLog').textContent = 'No hay un rostro de frente para fijar el día 1.';
+    return;
+  }
+  const result = Edema.applyCapture(edemaStore, vivo, new Date());
+  if (result.kind === 'same-day') {
+    $('camLog').textContent = 'El día 1 ya está fijado hoy. La comparación sigue contra esa línea.';
+    pintarEdema(vivo);
+    return;
+  }
+  edemaStore = result.store;
+  Edema.saveStore(edemaStore);
+  const guardada = result.kind === 'baseline'
+    ? edemaStore.baseline
+    : edemaStore.samples[edemaStore.samples.length - 1];
+  pintarEdema(guardada);
+  $('camLog').textContent = result.kind === 'baseline'
+    ? 'Día 1 guardado. Las filas comparan contra esa línea.'
+    : 'Captura guardada contra el día 1.';
 });
