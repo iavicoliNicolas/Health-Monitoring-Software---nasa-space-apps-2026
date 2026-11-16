@@ -715,3 +715,73 @@ body {
   border-top: 1px solid rgba(22, 41, 61, .08);
   font-size: .71rem; color: var(--tinta-2); line-height: 1.42;
 }
+
+/* ===== Panel de Simulación & Visualizador DSOC (Part 6) ================= */
+.sim-panel { padding: 10px 11px; display: flex; flex-direction: column; gap: 7px; }
+.sim-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.sim-titulo {
+  font-size: .72rem; font-weight: 650; color: var(--tinta);
+  letter-spacing: .01em;
+}
+.sim-etapa {
+  font-family: var(--mono); font-size: .6rem; font-weight: 600;
+  color: var(--tinta-2); background: var(--fondo-2);
+  padding: 2px 6px; border-radius: 999px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 105px;
+}
+.sim-etapa.activo   { color: var(--acento);  background: var(--acento-suave); }
+.sim-etapa.alerta   { color: var(--alerta);  background: var(--alerta-suave); }
+.sim-etapa.ok       { color: var(--ok);      background: var(--ok-suave); }
+.sim-etapa.critico  { color: var(--critico); background: var(--critico-suave); }
+
+.sim-btns { display: flex; gap: 5px; }
+.sim-btn {
+  flex: 1; min-width: 0;
+  font-size: .7rem; padding: 6px 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sim-btn.corriendo { background: var(--critico); border-color: var(--critico); }
+.sim-btn-reset { padding: 6px 9px; font-size: .74rem; line-height: 1; }
+
+.dsoc-box {
+  padding: 6px 8px; border-radius: var(--r-chico);
+  background: var(--fondo-2); border: 1px solid var(--linea);
+  transition: background .25s, border-color .25s;
+}
+.dsoc-box.activo {
+  background: var(--critico-suave);
+  border-color: rgba(224, 69, 91, .45);
+}
+.dsoc-box.transmitido {
+  background: var(--ok-suave);
+  border-color: rgba(15, 157, 106, .45);
+}
+
+.dsoc-ruta {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  font-family: var(--mono); font-size: .6rem; font-weight: 600; color: var(--tinta);
+}
+.dsoc-flecha { color: var(--tinta-3); letter-spacing: -.04em; }
+.dsoc-box.activo .dsoc-flecha { color: var(--critico); animation: dsocPulso .75s infinite alternate; }
+.dsoc-box.transmitido .dsoc-flecha { color: var(--ok); }
+
+@keyframes dsocPulso {
+  from { opacity: .45; }
+  to   { opacity: 1; }
+}
+
+.dsoc-barra {
+  height: 4px; margin: 5px 0 4px;
+  border-radius: 999px; background: #dde5ee; overflow: hidden;
+}
+.dsoc-barra span {
+  display: block; height: 100%; width: 0%;
+  background: var(--acento); transition: width .55s ease, background .3s;
+}
+.dsoc-box.activo .dsoc-barra span      { background: var(--critico); }
+.dsoc-box.transmitido .dsoc-barra span { background: var(--ok); }
+
+.dsoc-meta {
+  font-family: var(--mono); font-size: .58rem; color: var(--tinta-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}

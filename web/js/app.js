@@ -606,30 +606,68 @@ function buildAlertSpeechEnglish(alert) {
   return `Flight Surgeon AI ${alert.status || 'ALERT'} on ${metric}. Diagnosis: ${alert.diagnosis || ''}. Tactical action: ${alert.tactical_action || ''}`;
 }
 
-function ocultarSomaBanner() {
-  const banner = $('somaBanner');
-  if (!banner) return;
-  banner.classList.add('oculto');
-  banner.innerHTML = '';
+let dsocTimers = [];
+let demoTimers = [];
+let demoCorriendo = false;
+let somaActivoEnUi = false;
+
+function limpiarDsocTimers() {
+  dsocTimers.forEach(t => clearTimeout(t));
+  dsocTimers = [];
+}
+
+function setEtapaDemo(texto, clase) {
+  const el = $('demoEtapa');
+  if (!el) return;
+  el.textContent = texto;
+  el.className = 'sim-etapa' + (clase ? ' ' + clase : '');
+}
+
+function ocultarSomaBanner(forzar) {
+  if (!forzar && !somaActivoEnUi) return;
+  somaActivoEnUi = false;
+  limpiarDsocTimers();
+  const box = $('dsocBox');
+  const bar = $('dsocProgreso');
+  const meta = $('dsocMeta');
+  if (box) box.classList.remove('activo', 'transmitido');
+  if (bar) bar.style.width = '0%';
+  if (meta) meta.textContent = 'Zstd + AES-256-GCM · Keys 1-3';
+  if (!demoCorriendo) setEtapaDemo('Standby', '');
 }
 
 function renderizarSoma(soma) {
-  const banner = $('somaBanner');
-  if (!banner || !soma) return;
-  banner.innerHTML = `
-    <div class="soma-cab">
-      <b>SOMA WATCHDOG ACTIVE — SCIENTIFIC PRESERVATION &amp; DSOC OPTICAL LOCK</b>
-      <span class="soma-tag">AUTONOMOUS LOCK</span>
-    </div>
-    <div class="soma-grid">
-      <div class="soma-kv"><span>Trigger:</span><b>${escHtml(soma.trigger_reason)}</b></div>
-      <div class="soma-kv"><span>Incident UTC:</span><b>${escHtml(soma.incident_timestamp)}</b></div>
-      <div class="soma-kv"><span>Ring buffer:</span><b>${escHtml(soma.historical_samples_count)} samples (${escHtml(soma.compression_algorithm)} ${escHtml(soma.compression_ratio)}x)</b></div>
-      <div class="soma-kv"><span>Cipher:</span><b>${escHtml(soma.encryption_cipher)}</b></div>
-      <div class="soma-kv"><span>Laser terminal:</span><b>${escHtml(soma.dsoc_laser_terminal)}</b></div>
-      <div class="soma-kv"><span>Target ground:</span><b>${escHtml(soma.target_ground_station)} (${escHtml(soma.light_delay_minutes)} min light delay)</b></div>
-    </div>`;
-  banner.classList.remove('oculto');
+  const box = $('dsocBox');
+  const bar = $('dsocProgreso');
+  const meta = $('dsocMeta');
+  if (!box || !bar || !meta || !soma) return;
+
+  somaActivoEnUi = true;
+  limpiarDsocTimers();
+  box.classList.remove('transmitido');
+  box.classList.add('activo');
+  bar.style.width = '18%';
+  meta.textContent = `Freeze ${soma.historical_samples_count} samples · ${soma.compression_algorithm || 'Zstd'} (${soma.compression_ratio}x)`;
+  setEtapaDemo('SOMA Lock', 'critico');
+
+  dsocTimers.push(setTimeout(() => {
+    bar.style.width = '58%';
+    const tagShort = String(soma.auth_tag_hex || '').slice(0, 10);
+    meta.textContent = `AES-256-GCM ${soma.compressed_payload_bytes}B [${tagShort}] → Laser`;
+  }, 2200));
+
+  dsocTimers.push(setTimeout(() => {
+    bar.style.width = '88%';
+    meta.textContent = `Uplink 267 Mbps → DSN Goldstone (${soma.light_delay_minutes}m delay)`;
+  }, 4500));
+
+  dsocTimers.push(setTimeout(() => {
+    box.classList.remove('activo');
+    box.classList.add('transmitido');
+    bar.style.width = '100%';
+    meta.textContent = `TRANSMITTED · ${soma.compressed_payload_bytes}B → DSN Goldstone (${soma.light_delay_minutes}m)`;
+    setEtapaDemo('DSOC Sent', 'ok');
+  }, 7000));
 }
 
 function limpiarPanelDirectivas(mensaje, esconderSoma) {
@@ -641,7 +679,7 @@ function limpiarPanelDirectivas(mensaje, esconderSoma) {
   if (listaEl) {
     listaEl.innerHTML = `<div class="alerta-vacia">${escHtml(mensaje || 'No active clinical alerts. Waiting for live stream…')}</div>`;
   }
-  if (esconderSoma) ocultarSomaBanner();
+  if (esconderSoma) ocultarSomaBanner(true);
 }
 
 function renderizarAlertas(alertas) {
@@ -693,6 +731,118 @@ function renderizarAlertas(alertas) {
         ${expl ? `<div class="alerta-explicacion"><b>Crew explanation:</b> ${escHtml(expl)}</div>` : ''}
       </article>`;
   }).join('');
+}
+
+function detenerDemo(resetearEstado) {
+  demoTimers.forEach(t => clearTimeout(t));
+  demoTimers = [];
+  demoCorriendo = false;
+  const btn = $('btnAutoDemo');
+  if (btn) {
+    btn.classList.remove('corriendo');
+    btn.textContent = '▶ Auto-Demo (1m50s)';
+  }
+  if (resetearEstado) {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    enviar('RESET_NOMINAL');
+    ocultarSomaBanner(true);
+    setEtapaDemo('Standby', '');
+  }
+}
+
+function ejecutarCrisisDemo() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  setEtapaDemo('2/4 Crisis', 'critico');
+  enviar('RESET_NOMINAL');
+  enviar({ metric: 'cabin_ppco2_mmHg', value: 3.8 });
+  enviar({ metric: 'heart_rate_bpm', value: 118 });
+  enviar({ metric: 'respiratory_rate_bpm', value: 26.0 });
+
+  demoTimers.push(setTimeout(() => {
+    enviar({ metric: 'spo2_pct', value: 92 });
+    enviar({ metric: 'respiratory_rate_bpm', value: 22.0 });
+  }, 8000));
+}
+
+function ejecutarRecuperacionDemo() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  setEtapaDemo('3/4 Resolved', 'ok');
+  enviar({ metric: 'spo2_pct', value: 95 });
+  enviar({ metric: 'heart_rate_bpm', value: 112 });
+  enviar({ metric: 'cabin_ppco2_mmHg', value: 2.9 });
+  enviar({ metric: 'respiratory_rate_bpm', value: 25.0 });
+  speak('Countermeasures and smart transdermal patch protocol engaged. Air scrubber purged and supplemental oxygen restored. Crew vital signs stabilizing.');
+
+  demoTimers.push(setTimeout(() => {
+    enviar({ metric: 'heart_rate_bpm', value: 94 });
+    enviar({ metric: 'cabin_ppco2_mmHg', value: 2.7 });
+    enviar({ metric: 'respiratory_rate_bpm', value: 19.0 });
+    enviar({ metric: 'onsd_mm', value: 5.2 });
+  }, 8000));
+
+  demoTimers.push(setTimeout(() => {
+    enviar('RESET_NOMINAL');
+  }, 16000));
+}
+
+function ejecutarSomaDemo() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  setEtapaDemo('4/4 SOMA', 'critico');
+  enviar('DEPRESSURIZE');
+  enviar('TRIGGER_SOS');
+}
+
+function iniciarAutoDemo() {
+  if (demoCorriendo) {
+    detenerDemo(true);
+    return;
+  }
+  demoCorriendo = true;
+  const btn = $('btnAutoDemo');
+  if (btn) {
+    btn.classList.add('corriendo');
+    btn.textContent = '■ Stop Demo';
+  }
+
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  setEtapaDemo('1/4 Nominal', 'activo');
+  enviar('RESET_NOMINAL');
+
+  // 00:25: Crisis progresiva (CO2 + Taquicardia + Taquipnea -> Hipoxia [G+E])
+  demoTimers.push(setTimeout(() => {
+    if (demoCorriendo) ejecutarCrisisDemo();
+  }, 25000));
+
+  // 00:55: Resolución progresiva con contramedidas y parche (40 -> 70 -> 90 -> 100)
+  demoTimers.push(setTimeout(() => {
+    if (demoCorriendo) ejecutarRecuperacionDemo();
+  }, 55000));
+
+  // 01:25: Clímax — despresurización + SOS → SOMA congela buffer y transmite por DSOC a la Tierra
+  demoTimers.push(setTimeout(() => {
+    if (demoCorriendo) ejecutarSomaDemo();
+  }, 85000));
+
+  // 01:50: Fin del demo manteniendo el enlace SOMA/DSOC transmitido en pantalla
+  demoTimers.push(setTimeout(() => {
+    detenerDemo(false);
+  }, 110000));
+}
+
+function configurarPanelDemo() {
+  const btnAuto = $('btnAutoDemo');
+  const btnReset = $('btnResetDemo');
+  if (btnAuto) btnAuto.addEventListener('click', iniciarAutoDemo);
+  if (btnReset) btnReset.addEventListener('click', () => detenerDemo(true));
+
+  document.addEventListener('keydown', (ev) => {
+    const tag = (ev.target && ev.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (ev.key === '1') { detenerDemo(false); ejecutarCrisisDemo(); }
+    else if (ev.key === '2') { detenerDemo(false); ejecutarRecuperacionDemo(); }
+    else if (ev.key === '3') { detenerDemo(false); ejecutarSomaDemo(); }
+    else if (ev.key === '0') { detenerDemo(true); }
+  });
 }
 
 function configurarBotonVoiceAdvisor() {
@@ -927,6 +1077,7 @@ window.VitalGrid = { aplicar, todoSinMedicion, enviar, desdeCamara, speak };
 /* ===== Arranque ========================================================== */
 cargarPerfil();
 configurarBotonVoiceAdvisor();
+configurarPanelDemo();
 
 construir()
   .then(() => {

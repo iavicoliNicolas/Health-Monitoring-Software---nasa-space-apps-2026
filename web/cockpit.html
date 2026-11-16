@@ -78,9 +78,27 @@
         <!-- Signos vitales -->
         <section class="vitales" id="vitales"></section>
 
-        <!-- Panel de simulación -->
-        <section class="tarjeta">
-          <div class="placeholder">Part 6 · Simulation panel</div>
+        <!-- Panel de simulación y Uplink SOMA/DSOC (Part 6) -->
+        <section class="tarjeta sim-panel" id="panelSimulacion">
+          <div class="sim-cab">
+            <span class="sim-titulo">SOMA · DSOC Uplink</span>
+            <span class="sim-etapa" id="demoEtapa">Standby</span>
+          </div>
+
+          <div class="sim-btns">
+            <button type="button" class="btn sim-btn" id="btnAutoDemo" title="Run 1m50s Presentation Demo: Nominal → Crisis → Recovery → SOMA DSOC Uplink">▶ Auto-Demo (1m50s)</button>
+            <button type="button" class="btn btn-sec sim-btn-reset" id="btnResetDemo" title="Reset to Nominal (Key 0)">↺</button>
+          </div>
+
+          <div class="dsoc-box" id="dsocBox">
+            <div class="dsoc-ruta">
+              <span>🛰️ DSOC 1550nm</span>
+              <span class="dsoc-flecha" id="dsocFlecha">━━━▶</span>
+              <span>🌍 DSN Goldstone</span>
+            </div>
+            <div class="dsoc-barra"><span id="dsocProgreso"></span></div>
+            <div class="dsoc-meta" id="dsocMeta">Zstd + AES-256-GCM · Keys 1-3</div>
+          </div>
         </section>
 
       </div>
@@ -228,7 +246,6 @@
             <span class="punto"></span><span id="directivasResumen">Waiting for telemetry…</span>
           </span>
         </div>
-        <div class="soma-banner oculto" id="somaBanner"></div>
         <div class="alertas-lista" id="listaAlertas">
           <div class="alerta-vacia">No active clinical alerts. Waiting for live stream…</div>
         </div>
