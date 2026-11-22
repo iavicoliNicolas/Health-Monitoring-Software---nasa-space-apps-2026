@@ -1,301 +1,208 @@
-# VitalGrid :: Deep Space Astronaut Health Monitoring & Autonomous Flight Surgeon
+# Z.E.U.S.
 
-**NASA Space Apps Challenge — Deep Space Transit Biomedical Architecture (MVP)**  
-*Mission Profile: Earth-Mars Cycler / Lunar Gateway / Artemis Long-Duration Missions*  
-*Biomedical Standards: NASA-STD-3001 · NASA OSDR · CSA (Canadian Space Agency — Bio-Monitor & Radiation Monitoring 2026)*
+**Your health. Beyond Earth.**
 
----
+Z.E.U.S. is team Z.E.U.S.'s entry for the NASA Space Apps Challenge 2026 challenge *Create Health Monitoring Software for Astronauts on Space Missions*. It is a health-monitoring cockpit for a deep-space transit: a browser interface for the crew and the flight surgeon, fed by a local C++ daemon that streams a simulated biomedical state, scores it, and raises threshold alerts.
 
-## 1. Executive Summary & Aerospace System Architecture
+The landing page states the premise in the product itself: *"No one is going to answer. A twenty-minute answer can cost a life."*
 
-During deep-space transit missions beyond low Earth orbit (LEO), communication latency to Earth ground control reaches between **3 to 22 minutes one-way** (up to 44 minutes round-trip light delay from Mars). In acute clinical emergencies or life-support failures, terrestrial telemedicine is rendered biologically obsolete.
+![Landing](docs/landing.png)
 
-**VitalGrid** is an aerospace-grade, decoupled autonomous health monitoring architecture designed to safeguard astronaut crews in deep space:
+![Cockpit, nominal telemetry](docs/cockpit-nominal.png)
 
-```
-                                 +---------------------------------------------+
-                                 |         NASA RIDGE TELEMETRY INGESTION      |
-                                 |  [R]adiation  [I]solation  [D]istance       |
-                                 |  [G]ravity (Cardio/SANS)   [E]nvironment    |
-                                 +----------------------+----------------------+
-                                                        |
-                                                        v
-+---------------------------------------------------------------------------------------------------------+
-|                                    VITALGRID C++ BACKEND DAEMON                                         |
-|                                                                                                         |
-|   +------------------------------------+             +----------------------------------------------+   |
-|   |   FLIGHT SURGEON AI ENGINE         |             |   SOMA WATCHDOG THREAD (High-Priority)       |   |
-|   |   - NASA Clinical Rule Matrix      |             |   - Triggers: Asystole, SOS, Depressurization|   |
-|   |   - Real-Time Threshold Evaluation |             |   - 1000 Hz Circular Ring Buffer Burst       |   |
-|   |   - Tactical Action Directives     |             |   - Lossless Compression (Zstd L19)          |   |
-|   +-----------------+------------------+             |   - Military Encryption (AES-256-GCM)        |   |
-|                     |                                |   - DSOC 1550nm Laser Transmitter Queue      |   |
-|                     v                                +----------------------+-----------------------+   |
-|          [Clinical Alert Sub-JSON]                                          |                           |
-|                     |                                                       v                           |
-|                     +-----------------------> + <---------------------------+                           |
-|                                               |                                                         |
-|                                               v                                                         |
-|                               +-------------------------------+                                         |
-|                               |  RFC 6455 WEBSOCKET DAEMON    |                                         |
-|                               |  Port 9002 (Lock-Free Fanout) |                                         |
-|                               +---------------+---------------+                                         |
-+-----------------------------------------------|---------------------------------------------------------+
-                                                |  ws://127.0.0.1:9002
-                                                v
-                    +-------------------------------------------------------+
-                    |             CREW DRAGON GLASS COCKPIT UI              |
-                    |  - 1000 Hz Real-Time ECG Waveform Canvas              |
-                    |  - Health Score Gauge & Survival Triad Indicators     |
-                    |  - RIDGE Matrix (R, I, D, G, E) Telemetry Visualizer  |
-                    |  - Autonomous Clinical Directives & Action Protocols  |
-                    |  - Procedural Audio Synthesizer (Apollo/Artemis Tones)|
-                    |  - Simulation Cockpit (Anomaly Injection Pad)         |
-                    +-------------------------------------------------------+
-```
+![Flight Surgeon alerts after a cabin-air injection](docs/cockpit-alerts.png)
 
----
+Screenshots are from a local run: `make`, `./vitalgrid_daemon 9002`, and `python3 -m http.server` in `web/` (Ubuntu, g++ 13.3, Python 3.12). The nominal frame is the live stream at the daemon's resting baseline (health score 100). The alert frame is the same session after the cockpit's crisis shortcut.
 
-## 2. NASA RIDGE 5-Pillar Data Model
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](https://en.cppreference.com/w/cpp/17)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES_modules-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
+[![Python 3](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![WebSocket](https://img.shields.io/badge/WebSocket-RFC_6455-010101)](https://datatracker.ietf.org/doc/html/rfc6455)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-Face_Landmarker-4285F4)](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker)
+[![NASA Space Apps](https://img.shields.io/badge/NASA_Space_Apps-Challenge_2026-0B3D91)](https://www.spaceappschallenge.org/)
 
-The backend continuously ingests and validates structured JSON telemetry conforming to the 5 human spaceflight hazards identified by NASA's Human Research Program (HRP), paired with CSA (Canadian Space Agency — Bio-Monitor & Radiation Monitoring 2026) continuous biometry/dosimetry protocols:
+## The challenge
 
-- **Additional Phase 2 Indicators & Multimodal Inputs**: Tracks `blood_sugar_mg_dl` (`GravityTelemetry`) and manual/ocular `crew_mood` (`IsolationTelemetry`) alongside interactive HUD controls: clickable 4-zone SVG human body map, manual crew lab/self-report inputs (glucose, ONSD, mood), space habitat environment selector (`comm_delay_oneway_min`), and countermeasure routine streak tracking (ARED 2.5h, glucose, ocular scan).
+Beyond low Earth orbit, a round trip to a flight surgeon on Earth can take tens of minutes. The challenge asks for software that helps astronauts and flight surgeons watch crew health during a mission: vitals, trends, and alerts, informed by NASA's open human-research record.
 
-```json
-{
-  "timestamp": "2026-11-14T12:33:24Z",
-  "crew_member_id": "CMD-01",
-  "health_score": 92,
-  "survival_status": {
-    "vital_signs_present": true,
-    "sos_panic_button_active": false,
-    "cabin_pressure_nominal": true
-  },
-  "telemetry_ridge": {
-    "R_radiation": {
-      "career_accumulated_mSv": 145.2,
-      "acute_event_mSv": 12.0
-    },
-    "I_isolation": {
-      "sleep_hours_last_24h": 5.8,
-      "hrv_rmssd_drop_pct": 18.5,
-      "pvt_reaction_time_ms": 280
-    },
-    "D_distance": {
-      "comm_delay_oneway_min": 20.5,
-      "med_supply_days_remaining": 412
-    },
-    "G_gravity": {
-      "heart_rate_bpm": 105,
-      "blood_pressure_sys": 135,
-      "blood_pressure_dia": 85,
-      "onsd_mm": 5.2,
-      "exercise_completed_hours": 1.5
-    },
-    "E_environment": {
-      "cabin_ppco2_mmHg": 3.2,
-      "spo2_pct": 94,
-      "body_temperature_c": 37.9
-    }
-  }
-}
+Z.E.U.S. answers that with two processes on one machine:
+
+- a **cockpit** (`web/`) with a crew profile, a body map, a camera, a cardiac trace, clinical directives, and a five-hazard matrix
+- a **daemon** (`vitalgrid_daemon`) that owns the telemetry state, the rules, and the emergency archive, and pushes JSON to the browser
+
+There is one cockpit, not two logins. Crew-facing text and flight-surgeon actions share the same screen. The landing buttons Telemetry, Camera, and Analysis scroll to those regions.
+
+## What is implemented
+
+### Cockpit
+
+- Crew identification (name, age, biological sex, mission day) stored in `localStorage` under `zeus.profile`. The mission clock is a client-side counter. On the landing page it starts at day 42, 18:34 and ticks once per second. In the cockpit it restarts from the mission day in the profile.
+- Layout and colors come from `web/data/metricas.json`. The HTML does not hard-code clinical thresholds. Each metric names the JSON path on the daemon (`telemetry_ridge.…`), a comparison, a unit, and an evidence label (`N1` official NASA limit, `N2` flight literature, `N3` terrestrial analog, `N4` terrestrial clinical standard, `SF` set by the team).
+- Health-score ring, vital-sign cards, and a clickable body map (`web/assets/cuerpo.png`). Points with no sample stay gray.
+- Camera panel, off until Start. It loads a vendored MediaPipe Face Landmarker (`web/vendor/mediapipe/`, WASM plus `face_landmarker.task`) and estimates eye aspect ratio, blinks per minute, PERCLOS over 60 seconds, and microsleeps (closures at or above 500 ms). A Facial edema tab compares cheek and jaw widths with a day-1 baseline kept in `localStorage` (`vitalgrid.facialEdema.v1`). A video-file input can stand in for the webcam. Measurements go to the daemon as `{metric, value}` messages.
+- Cardiac trace drawn in the browser from `heart_rate_bpm` only. `web/js/ecg.js` generates a PQRST-shaped wave at that rate. The daemon does not send voltage samples.
+- Flight Surgeon panel. Each alert shows status, the breached metric, a diagnosis, a tactical action, a crew explanation, and an OSDR accession string. A Voice Advisor button speaks that text with the Web Speech API.
+- SOMA / DSOC strip and a scripted Auto-Demo (about 1 minute 50 seconds: nominal, crisis, recovery, SOS). Keys `1`, `2`, `3`, and `0` run the crisis, recovery, SOS, and reset sequences when focus is not in a form field.
+- Installable manifest (`web/manifest.json`) with standalone display and the Z.E.U.S icons. Served from `http://127.0.0.1:5500`, Chrome offered an Install prompt.
+
+`web/js/audio_synth.js` is a Web Audio caution-tone class. No page loads it. Spoken alerts use `speechSynthesis` in `web/js/app.js`.
+
+`prototipo-camara/` is an earlier standalone camera page. The cockpit uses `web/js/camara.js`, which keeps the same measurement constants.
+
+### Daemon
+
+C++17, namespace `vitalgrid`. One process, default port **9002**.
+
+- Holds a `RidgePayload`: crew id `CMD-01`, a 0–100 health score, three survival flags, and the RIDGE groups Radiation, Isolation, Distance, Gravity, and Environment.
+- Broadcasts that state about once per second over a WebSocket server implemented in `src/network/` (RFC 6455 handshake, no third-party socket library). The listen socket binds `INADDR_ANY`. The log line and the browser both use `ws://127.0.0.1:9002`.
+- On a plausible living baseline, the broadcast sample adds a small heart-rate and sensor jitter. The clinical rules run on the unjittered state, so the noise does not accumulate into an alert.
+- Accepts text commands from the browser: `TRIGGER_SOS`, `DEPRESSURIZE`, `ASYSTOLE`, `RESET_SURVIVAL`, `RESET_NOMINAL`, and `INJECT_*` for hypoxia, hypercapnia, SANS, solar-particle dose, fever, tachycardia, high and low glucose, sensor fault, and fatigue. It also accepts `{"metric","value"}` for the camera channels and for glucose, ONSD, mood, comm delay, exercise, sleep, and the same vital and cabin fields. The cockpit UI sends the camera metrics and the demo sequences. It does not draw a separate lab form for glucose or mood.
+- `FlightSurgeonAI` compares the state with the constants in `src/engine/flight_surgeon.hpp` (acute dose 250 mSv, career dose 600 mSv, blood pressure 155/95 mmHg, heart rate 110 bpm, ONSD 5.8 mm, cabin ppCO₂ 3.0 mmHg, SpO₂ 95%, temperature 38.5 °C, respiratory rate 10 and 24 breaths/min, glucose 65 and 140 mg/dL, sleep 6 h, HRV drop 25%, blink rate 8/min, one microsleep). Some rules combine pillars: a solar-particle dose together with high CO₂, and tachycardia together with hypoxia or hypercapnia. A self-report of `OPTIMAL` while sleep, HRV, blink rate, or microsleeps are already out of range raises `crew_mood_discrepancy`. Values that are non-finite or physiologically impossible return a single `SENSOR_ARTIFACT_REJECTED` warning and skip the other diagnoses for that tick. Alert text in the daemon is Spanish. The cockpit keeps an English catalog and displays that catalog when the metric matches.
+- Health score starts at 100 in `src/main.cpp` and is recomputed each tick from fixed penalties in `compute_health_score`. Loss of vital signs forces 0.
+- `SomaWatchdog` runs on its own thread. It fires once when vital signs are absent, the SOS flag is set, or cabin pressure is not nominal. It pushes 50 extra copies of the current sample into a 2048-slot ring buffer, then emits a `SOMA_DSOC_EVENT`. Payload size is `samples × 450 + 256` bytes. The compression ratio is the constant 3.65. The nonce and authentication tag are random hex. The record is labeled Zstandard level 19 and AES-256-GCM, and it names a 1550 nm DSOC terminal aimed at the Goldstone 34 m station. Those labels are fields in the JSON. The translation unit does not call a compression or crypto library, and it does not open a radio. The cockpit animates a progress bar from that event. The nominal loop remains 1 Hz. The "1000 Hz" line in the log is the comment on that burst, not a millisecond sampler.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph browser [Browser cockpit]
+    Landing[index.html profile]
+    Cockpit[cockpit.html]
+    Catalog[metricas.json]
+    Camera[MediaPipe Face Landmarker<br/>vendored WASM]
+    Landing --> Cockpit
+    Catalog --> Cockpit
+    Camera --> Cockpit
+  end
+
+  subgraph daemon [vitalgrid_daemon]
+    State[RIDGE state]
+    FS[FlightSurgeonAI]
+    Buffer[Ring buffer 2048]
+    SOMA[SomaWatchdog]
+    WS[WebSocket server :9002]
+    State --> FS
+    State --> Buffer
+    State --> SOMA
+    SOMA --> Buffer
+    FS --> WS
+    State --> WS
+    SOMA --> WS
+  end
+
+  Cockpit <-->|ws://127.0.0.1:9002| WS
+  Cache[(data/osdr_live_cache.json)]
+  Fetch[scripts/fetch_osdr_cache.py] --> Cache
 ```
 
----
+The OSDR cache is not on the live path. The daemon does not open that file. Alert cards carry accession strings compiled into `flight_surgeon.cpp`.
 
-## 3. Autonomous Decision Engine (Flight Surgeon AI)
+## NASA sources in this repository
 
-The C++ `FlightSurgeonAI` engine evaluates telemetry against strict aerospace biomedical standards (**NASA-STD-3001**, **NASA OSDR**, and **CSA — Canadian Space Agency Bio-Monitor & Radiation Monitoring 2026**):
+| Source | Where it appears |
+| --- | --- |
+| NASA-STD-3001 | `web/data/metricas.json` cites Vol. 1 Rev. C, V1 4030 for the 600 mSv career bar and NASA-STD-3001 for the 6-hour sleep warning. One crew explanation in `web/js/app.js` repeats the career-limit citation. |
+| NASA OCHMO | `metricas.json` attributes the 250 mSv acute solar-event bar to "NASA OCHMO — effective dose per solar event". |
+| Five hazard areas | The cockpit heading calls the R, I, D, G, and E groups "5 human spaceflight hazards": radiation, isolation, distance, gravity, environment. That is the shape of the telemetry model. There is no HRP API client. |
+| NASA Open Science Data Repository and GeneLab | `scripts/fetch_osdr_cache.py` requests `https://osdr.nasa.gov/osdr/data/search` (`type=cgene`, organism Homo sapiens, project type Spaceflight) and documents `https://genelab.nasa.gov/genelabAPIs`. The checked-in `data/osdr_live_cache.json` says `fetched_at` `2026-11-15T20:45:12Z` and `hits.total` 36. The script refuses mouse-liver accessions OSD-48, OSD-137, and GLDS-242. |
+| OSDR accession labels on alerts | `src/engine/flight_surgeon.cpp` writes strings such as `OSD-569 / OSD-483` onto each alert. Those are literals, not a query result. Several of those accessions are also inside the cache. |
+| Inspiration4 and the Space Omics and Medical Atlas | Text inside the cached search hits (for example the Inspiration4 T-cell study), not a separate client. |
+| Evidence labels in the UI | `metricas.json` also cites confinement analogs, flight literature, and terrestrial clinical ranges, and marks some of them as not validated in microgravity. |
 
-- **Didactic Crew Guidance (`astronaut_explanation`)**: Every `ClinicalAlert` emits an `astronaut_explanation` field alongside `tactical_action` and `osdr_reference`, translating physiological triggers into plain instructions under the dashboard's **Guía para el Tripulante** view.
-- **Glycemia & Self-Report Cross-Check**: Evaluates `blood_sugar_mg_dl` (`> 140 mg/dL` WARNING for microgravity insulin resistance; `< 65 mg/dL` CRITICAL acute hypoglycemia) and cross-validates manual `crew_mood` against objective sleep, HRV, and MediaPipe ocular fatigue metrics to flag masked fatigue (`crew_mood_discrepancy`).
+The NASA Twins Study is not referenced. The Canadian Space Agency is not an integration. The word SOMA in the daemon means the team's *Spacecraft Offline Mortality & Anomaly* archive (`src/soma/`). The NASA *Space Omics and Medical Atlas*, also called SOMA, shows up only as publication text inside the OSDR cache.
 
-| Severity | Metric / Condition | Threshold Limit | Clinical Diagnosis | Immediate Tactical Resolution Action |
-| :--- | :--- | :--- | :--- | :--- |
-| **CRITICAL** | `acute_event_mSv` | `> 250.0 mSv` | Acute Radiation Syndrome (ARS) / Solar Particle Event (SPE) | Immediate evacuation to deep storm shelter core (water-shielded compartment). Administer Filgrastim (G-CSF) 300mcg SQ. Power down unshielded avionics. |
-| **CRITICAL** | `career_accumulated_mSv` | `> 600.0 mSv` | Cumulative Lifetime Radiation Ceiling Exceeded | Terminate EVA operations. Reassign to high-shielded habitat watch. Initiate daily lymphocyte chromosomal assays. |
-| **CRITICAL** | `blood_pressure` | `> 155/95 mmHg` | Hypertensive Crisis Under Microgravity | Cease resistive exercises. Secure in supine restraint. Administer sublingual Captopril 25mg; monitor every 10 min. |
-| **CRITICAL** | `heart_rate_bpm` | `> 110 bpm` | Sustained Supraventricular Tachycardia | Perform vagal maneuvers (modified Valsalva). Verify electrolyte levels (K+/Mg2+). IV Metoprolol 5mg if persistent. |
-| **CRITICAL** | `onsd_mm` | `> 5.80 mm` | SANS — Elevated Intracranial Pressure (ICP) | Deploy Lower Body Negative Pressure (LBNP) device at -35 mmHg for 2 hours. Administer oral Acetazolamide 250mg. Schedule OCT scan. |
-| **CRITICAL** | `cabin_ppco2_mmHg` | `> 3.00 mmHg` | Atmospheric Hypercapnia / CO2 Retention | Cycle CDRA to Fast Desorption mode. Don emergency crew O2 masks. Activate LiOH backup chemical scrubber canisters. |
-| **CRITICAL** | `spo2_pct` | `< 95%` | Acute Systemic Hypoxemia | Deliver 100% O2 via aviator mask at 6 L/min. Inspect cabin/suit ppO2 sensors. Auscultate lung bases for atelectasis. |
-| **CRITICAL** | `body_temperature_c` | `> 38.5 °C` | Space Pyrexia / Thermoregulatory Collapse or Sepsis | Engage Liquid Cooling Garment (LCVG) active chiller loop. Infuse IV Paracetamol 1000mg. Run blood Bio-Analyzer cartridge. |
-| **WARNING** | `sleep_hours_last_24h` | `< 6.0 hours` | Chronic Sleep Debt & Cognitive Fatigue | Prescribe mandatory 60-min restorative rest. Shift ambient lighting to 480nm-depleted warm circadian spectrum. Hold robotics tasks. |
-| **WARNING** | `hrv_rmssd_drop_pct` | `> 25.0%` | Autonomic Sympathetic Exhaustion | Guided biofeedback resonance breathing (0.1 Hz pacing) for 15 min. Reduce sensory workload. Assess cortisol biomarkers. |
-| **WARNING** | `blink_rate_per_min` | `< 8 blinks/min` | Severe Ocular Fatigue / Hypovigilance | Activate 20-20-20 visual rest protocol. Dispense lubricating eye drops. Re-evaluate alertness prior to critical operations. |
-| **WARNING** | `microsleep_events` | `>= 1 event` | Microsleep Episode Detected / Loss of Consciousness | Cockpit audible chime. Alert Mission Commander. Immediate relief from active flight controls. |
-
-When any threshold is breached, the engine generates and broadcasts an actionable sub-JSON alert:
-
-```json
-{
-  "type": "CLINICAL_ALERT",
-  "status": "CRITICAL",
-  "trigger_metric": "cabin_ppco2_mmHg",
-  "trigger_value": "3.20 mmHg",
-  "threshold_limit": "> 3.0 mmHg",
-  "diagnosis": "CABIN ATMOSPHERIC HYPERCAPNIA - CO2 RETENTION / ECLSS DEGRADATION",
-  "tactical_action": "Cycle Carbon Dioxide Removal Assembly (CDRA) beds to Fast Desorption mode. Don emergency crew O2 masks. Activate LiOH backup chemical scrubber cartridges.",
-  "timestamp": "2026-11-14T12:33:24Z"
-}
-```
-
----
-
-## 4. SOMA Module (Spacecraft Offline Mortality & Anomaly Archive)
-
-The **SOMA** module operates on a dedicated high-priority watchdog thread.
-
-### Emergency Trigger Condition:
-$$\text{Trigger} = (\neg \text{vital\_signs\_present}) \lor (\text{sos\_panic\_button\_active}) \lor (\neg \text{cabin\_pressure\_nominal})$$
-
-### "Science over Survival" Execution Sequence:
-1. **Sampling Frequency Boost**: The telemetry ring buffer increases sampling from nominal 1 Hz to **1000 Hz** (1-millisecond resolution burst capture).
-2. **Container Packaging**: Historical RIDGE snapshots are extracted and wrapped into an aerospace black-box flight recorder archive.
-3. **Lossless Compression**: Compressed using simulated Zstandard (Zstd level 19 dictionary), achieving typical ratios of **3.65x**.
-4. **Military-Grade Encryption**: Secured with authenticated **AES-256-GCM** (NIST SP 800-38D), producing a 96-bit initialization vector (`iv_nonce_hex`) and 128-bit authentication tag (`auth_tag_hex`).
-5. **DSOC Optical Laser Uplink**: Payload is enqueued into the **Deep Space Optical Communications (DSOC)** 1550nm flight laser terminal at 267 Mbps, aimed at Earth DSN ground stations (Goldstone / Palomar).
-6. **Prominent Console Broadcast**:
-```
-================================================================================
-  [SOMA DSOC BURST TRANSMITTED]
-  TIMESTAMP:         2026-11-14T12:34:00Z
-  CREW ID:           CMD-01
-  TRIGGER REASON:    RAPID CABIN DEPRESSURIZATION / ECLSS STRUCTURAL BREACH
-  TELEMETRY SAMPLES: 500 packets (1000 Hz burst archive)
-  DATA SIZE:         68400 B raw -> 18739 B (Zstd 3.65x)
-  SECURITY CIPHER:   AES-256-GCM (Nonce: 0x9F3E8B1A4C2D... | Tag: 0x5C81E3FA...)
-  TRANSMITTER:       DSOC 1550nm Uplink Laser -> NASA DSN Goldstone 34m Beam Waveguide
-  ONE-WAY DELAY:     20.5 min light-speed delay to Earth
-================================================================================
-```
-
----
-
-## 5. Directory Structure
+## Project structure
 
 ```
-f:\VitalGrid\
-├── CMakeLists.txt              # Standard CMake build configuration
-├── Makefile                    # Cross-platform Makefile (Windows / Linux / macOS)
-├── build.bat                   # 1-click Windows compilation script
-├── run.bat                     # 1-click launch script (builds, opens UI & starts daemon)
-├── vitalgrid_daemon.exe        # Pre-compiled high-performance binary
-├── src\
-│   ├── main.cpp                # Daemon lifecycle, telemetry ingestion loop & signal handling
-│   ├── models\
-│   │   ├── ridge_payload.hpp   # RIDGE 5-pillar structs & exact JSON serialization
-│   │   └── alert_payload.hpp   # Clinical alert & tactical directives model
-│   ├── engine\
-│   │   ├── flight_surgeon.hpp  # NASA clinical thresholds specification
-│   │   └── flight_surgeon.cpp  # Autonomous rule evaluation & health scoring logic
-│   ├── soma\
-│   │   ├── circular_buffer.hpp # Thread-safe 1000Hz circular ring buffer
-│   │   ├── soma_watchdog.hpp   # SOMA watchdog thread & DSOC transmission records
-│   │   └── soma_watchdog.cpp   # Science-over-survival burst sequence implementation
-│   └── network\
-│       ├── websocket_server.hpp# Self-contained RFC-6455 WebSocket server header
-│       └── websocket_server.cpp# WinSock2/POSIX implementation with built-in SHA1/Base64
-└── web\
-    ├── index.html              # Crew Dragon glass-cockpit interactive dashboard
-    ├── css\
-    │   └── style.css           # Futuristic aerospace HUD design system
-    └── js\
-        ├── audio_synth.js      # Procedural Web Audio API sound synthesizer
-        └── app.js              # WebSocket telemetry handler, live ECG & anomaly pad
-```
----
-
-## 6. 🚀 Guía Rápida para el Equipo (Cómo Correr el Proyecto en 2 Minutos)
-
-¡Bienvenido al equipo de **VitalGrid**! Sigue estos pasos para clonar y levantar el sistema de monitoreo biomédico en tu computadora:
-
-### Paso 1: Clonar el Repositorio
-Abre tu terminal (PowerShell, CMD, Git Bash o terminal de Linux/macOS) y clona el proyecto:
-```bash
-git clone https://github.com/86developer/NASA-Spaceapps-2026.git
-cd NASA-Spaceapps-2026
+.
+├── CMakeLists.txt          # C++17 executable vitalgrid_daemon
+├── Makefile                # g++ / clang++, pthread or ws2_32
+├── build.bat               # Windows build
+├── run.bat                 # Windows: build, HTTP on :8080, daemon on :9002
+├── run-zeus.bat            # Windows: static server only, no daemon
+├── data/
+│   └── osdr_live_cache.json
+├── docs/                   # screenshots of a local run
+├── scripts/fetch_osdr_cache.py
+├── prototipo-camara/       # earlier camera page
+├── src/
+│   ├── main.cpp
+│   ├── models/             # ridge_payload.hpp, alert_payload.hpp
+│   ├── engine/             # FlightSurgeonAI
+│   ├── soma/               # ring buffer and watchdog
+│   └── network/            # WebSocket server
+├── tests/                  # Python scripts that speak the socket
+└── web/
+    ├── index.html          # landing
+    ├── cockpit.html
+    ├── manifest.json
+    ├── css/style.css
+    ├── data/metricas.json
+    ├── js/                 # app, camera, ECG, facial edema, panel, audio_synth
+    ├── assets/             # body map, moon photograph
+    ├── iconos/
+    └── vendor/mediapipe/   # offline Face Landmarker
 ```
 
----
+There is no committed `vitalgrid_daemon` binary. `run.bat` builds it.
 
-### Paso 2: Levantar el Proyecto
+## Run it locally
 
-#### 🪟 En Windows (El método más fácil - 1 Clic):
-Simplemente ejecuta el script automatizado:
-```cmd
-.\run.bat
-```
-> **¿Qué hace `run.bat` automáticamente?**
-> 1. Detecta tu compilador `g++` (incluso si está instalado vía Scoop o MinGW).
-> 2. Compila el demonio `vitalgrid_daemon.exe` optimizado con `-O3`.
-> 3. Abre automáticamente la interfaz **Crew Dragon** (`web/index.html`) en tu navegador predeterminado.
-> 4. Inicia el servidor WebSocket en segundo plano en `ws://127.0.0.1:9002`.
+The cockpit uses `fetch()` for `metricas.json`. Opening the HTML file directly (`file://`) fails that request. Serve `web/` over HTTP, and run the daemon if you want numbers instead of "Disconnected".
 
-#### 🐧 En Linux / macOS / WSL:
-Compila con `g++` (o `clang++`) y levanta el demonio:
-```bash
-# Compilar:
-g++ -std=c++17 -O3 -Wall -Wextra src/main.cpp src/engine/flight_surgeon.cpp src/soma/soma_watchdog.cpp src/network/websocket_server.cpp -pthread -o vitalgrid_daemon
+Verified on Ubuntu 24.04 with g++ 13.3 and Python 3.12:
 
-# Iniciar backend:
-./vitalgrid_daemon 9002
-```
-Luego abre el archivo `web/index.html` en tu navegador favorito (Chrome, Firefox, Edge, Safari).
-
----
-
-### 🛠️ ¿No tienes compilador C++ instalado?
-- **En Windows (Recomendado vía Scoop):**
-  ```powershell
-  scoop install gcc
-  ```
-- **En Ubuntu / Debian:**
-  ```bash
-  sudo apt update && sudo apt install -y build-essential
-  ```
-- **En macOS:**
-  ```bash
-  xcode-select --install
-  ```
-
----
-
-### Paso 3: Interactuar con el Dashboard
-Una vez abierto el dashboard:
-1. Verás el estado **"TELEMETRY ONLINE"** en verde en la barra superior.
-2. El ECG cardíaco comenzará a dibujar en tiempo real a 1000 Hz sincronizado con la frecuencia cardíaca.
-3. En la columna derecha encontrarás el **SIMULATION COCKPIT (ANOMALY INJECTION PAD)**:
-   - Haz clic en **`🚨 TRIGGER SOS BUTTON`**, **`💥 DEPRESSURIZE CABIN`** o **`💔 ASYSTOLE / COLLAPSE`** para activar el protocolo de emergencia **SOMA** ("Ciencia sobre Supervivencia"), ver el empaquetado forense Zstd, el cifrado militar AES-256-GCM y la transmisión láser DSOC a 1550nm hacia la Tierra.
-   - Haz clic en **`🫁 INJECT HYPOXIA`**, **`💨 INJECT ppCO2`** o **`👁️ INJECT SANS`** para ver cómo la IA del **Flight Surgeon** emite directivas tácticas inmediatas.
-   - Haz clic en **`✨ RESTORE ALL TO NOMINAL BASELINE`** para reiniciar todos los parámetros al estado de salud ideal.
-
----
-
-## 7. Opciones Avanzadas de Compilación (CMake / Make)
-
-### Con CMake:
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
-./vitalgrid_daemon 9002
-```
-
-### Con Makefile:
 ```bash
 make
-./vitalgrid_daemon.exe
+./vitalgrid_daemon 9002
 ```
 
----
+Second terminal:
 
-## 8. Ejecución de Pruebas de Integración (Opcional)
-Para verificar la conexión de telemetría y el disparo de SOMA desde scripts automatizados:
 ```bash
-python tests/test_stream.py
-python tests/test_soma.py
+cd web
+python3 -m http.server 5500
 ```
 
+Open <http://127.0.0.1:5500/>. Enter a crew profile, choose Telemetry, and wait for the pill to read **Online**. Key `1` injects the cabin-air crisis shown above. Key `0` returns the baseline.
+
+CMake, if you prefer it:
+
+```bash
+cmake -S . -B build
+cmake --build build
+./build/vitalgrid_daemon 9002
+```
+
+Windows, from the scripts in the repo: `build.bat` compiles with `g++`. `run.bat` starts `python -m http.server 8080` at the repository root and the daemon, then opens `http://localhost:8080/web/index.html`. `run-zeus.bat` serves only `web/` on port 5500 (or 5501) and does not start the daemon, so the cockpit stays disconnected.
+
+### Checks that passed here
+
+With the daemon already listening on port 9002:
+
+- `python3 tests/test_stream.py` completed a WebSocket handshake and read RIDGE frames (health score 100 at baseline).
+- `python3 tests/test_soma.py` received a `SOMA_DSOC_EVENT` after `TRIGGER_SOS`, then sent `RESET_NOMINAL`.
+- `python3 tests/test_peripheral_integration.py` starts its own daemon on port 9005 (it picks `vitalgrid_daemon` on Linux and `vitalgrid_daemon.exe` on Windows) and observed blink-rate and microsleep warnings.
+
+`python3 tests/test_flight_surgeon_audit.py` did not start on this machine. It always launches `vitalgrid_daemon.exe`, including on Linux.
+
+`scripts/fetch_osdr_cache.py` rewrites `data/osdr_live_cache.json` from the live OSDR search API. It needs network access to `osdr.nasa.gov`. This README does not refresh that file.
+
+## GitHub Pages
+
+`.github/workflows/pages.yml` publishes the `web/` directory when it runs on `main`. After the workflow is on the default branch, set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**.
+
+That site is the interface. The clinical engine stays on the machine that runs `vitalgrid_daemon`. The page always dials `ws://127.0.0.1:9002`, and a Pages URL is `https://`, so the browser will not open that socket from the hosted page. Use the local HTTP server above for a connected cockpit. Camera capture needs a secure context. `http://localhost` qualifies, and so does HTTPS on Pages. The Face Landmarker files are in the repository, so the model does not download at runtime.
+
+## Team
+
+History on `main` (14–15 Nov 2026):
+
+- **Nicolás Iavicoli Dulcet** (Mar del Plata, Argentina), GitHub [iavicoliNicolas](https://github.com/iavicoliNicolas). He owns this repository. The commit under that account is the merge of pull request #2, `feature/front-cockpit`, on 14 Nov 2026.
+- **Clara Culler** (`claritaculler`) built the cockpit the merge brought in: landing page, layout, body map, PWA manifest and icons, ECG trace, and camera panel. She also merged that work and a later landing pass.
+- **Nahuel Nuñez** (`nahuelnunez@estudiante.mdp.utn.edu.ar`, UTN) wrote the C++ daemon, the Flight Surgeon rules, the SOMA watchdog, the WebSocket server, the OSDR fetch script, the integration scripts, and the SOMA / Auto-Demo strip in the cockpit.
+- Three commits are attributed to Cursor Agent, including an English pass over the cockpit and the wiring of the page to the daemon.
+
+## Resumen en español
+
+Z.E.U.S. es el proyecto del equipo Z.E.U.S. para el desafío de NASA Space Apps Challenge 2026 *Create Health Monitoring Software for Astronauts on Space Missions*. El repositorio junta un cockpit en el navegador (perfil del tripulante, mapa corporal, cámara con MediaPipe en local, trazado cardíaco sintético, directivas clínicas y matriz RIDGE) con un demonio C++17 que publica telemetría simulada por WebSocket en el puerto 9002, evalúa umbrales y, ante SOS, asistolia o pérdida de presión, emite un archivo de emergencia etiquetado como transmisión DSOC. Ese archivo estima el tamaño y usa una razón de compresión fija. No cifra ni comprime de verdad. La caché de OSDR / GeneLab está en `data/` y no la lee el demonio en marcha. Nicolás Iavicoli Dulcet es el dueño del repositorio e integró el cockpit (pull request #2). Clara Culler construyó la interfaz y Nahuel Nuñez el demonio y el motor clínico. Para probarlo: `make`, `./vitalgrid_daemon 9002` y `python3 -m http.server 5500` dentro de `web/`.
